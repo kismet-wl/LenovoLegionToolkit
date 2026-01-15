@@ -88,6 +88,15 @@ namespace LenovoLegionToolkit.WPF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Commit.
+        /// </summary>
+        public static string AboutPage_Commit {
+            get {
+                return ResourceManager.GetString("AboutPage_Commit", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Data.
         /// </summary>
         public static string AboutPage_Data {

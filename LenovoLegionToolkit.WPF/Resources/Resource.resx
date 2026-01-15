@@ -121,7 +121,10 @@
     <value>Lenovo Legion Toolkit</value>
   </data>
   <data name="AboutPage_Build" xml:space="preserve">
-    <value>Build</value>
+    <value>Build:</value>
+  </data>
+  <data name="AboutPage_Commit" xml:space="preserve">
+    <value>Commit:</value>
   </data>
   <data name="AboutPage_LatestReleaseOnGitHub" xml:space="preserve">
     <value>Latest release on GitHub</value>

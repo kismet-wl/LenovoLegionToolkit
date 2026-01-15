@@ -30,9 +30,14 @@
             Text="{x:Static resources:Resource.AboutPage_Version}" />
         <TextBlock
             x:Name="_build"
-            Padding="0,0,0,16"
+            Padding="0,0,0,8"
             Focusable="True"
             Text="{x:Static resources:Resource.AboutPage_Build}" />
+        <TextBlock
+            x:Name="_commit"
+            Padding="0,0,0,16"
+            Focusable="True"
+            Text="{x:Static resources:Resource.AboutPage_Commit}" />
 
         <TextBlock x:Name="_copyright" Focusable="True" />
         <TextBlock
