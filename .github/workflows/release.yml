@@ -3,7 +3,8 @@ name: Release
 on:
   push:
     tags:
-      - "[0-9]*.[0-9]*.[0-9]*"
+      - 'v*'
+      - '[0-9]*.[0-9]*.[0-9]*'
 
 jobs:
   build:
@@ -13,6 +14,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
@@ -20,15 +23,21 @@ jobs:
     - name: Restore
       run: dotnet restore
     - name: Build
-      run: .\make.bat ${{ github.ref_name }}
+      run: .\make.bat
+    - name: Get Installer Filename
+      id: get_installer
+      run: |
+        $installer = Get-ChildItem build_installer\LenovoLegionToolkitSetup-*.exe | Select-Object -First 1
+        echo "filename=$($installer.Name)" >> $env:GITHUB_OUTPUT
+        echo "Installer filename: $($installer.Name)"
     - name: Release
       uses: softprops/action-gh-release@v0.1.13
       with:
         draft: true
-        files: build_installer/LenovoLegionToolkitSetup.exe
+        files: build_installer/${{ steps.get_installer.outputs.filename }}
         fail_on_unmatched_files: true
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: installer
-        path: build_installer/LenovoLegionToolkitSetup.exe
+        path: build_installer/${{ steps.get_installer.outputs.filename }}
