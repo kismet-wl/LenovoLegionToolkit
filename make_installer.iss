@@ -38,6 +38,7 @@ ArchitecturesInstallIn64BitMode=x64os
 VersionInfoVersion={#MyAppVersionInfo}
 VersionInfoTextVersion={#MyAppVersion}
 SetupIconFile=LenovoLegionToolkit.WPF\Assets\icon.ico
+UninstallDisplayName={#MyAppName}
 
 [Code]
 function InitializeSetup: Boolean;
