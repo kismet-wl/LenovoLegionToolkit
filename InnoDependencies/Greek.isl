@@ -1,4 +1,4 @@
-﻿; *** Inno Setup version 6.1.0+ Greek messages ***
+﻿; *** Inno Setup version 6.5.0+ Greek messages ***
 ;
 ; To download user-contributed translations of this file, go to:
 ;   https://jrsoftware.org/files/istrans/
@@ -10,7 +10,7 @@
 ;
 ; Originally translated by Anastasis Chatzioglou, baldycom@hotmail.com
 ; Updated by XhmikosR [XhmikosR, my_nickname at yahoo dot com]
-; Updated to version 6.1.0+ by Vasileios Karamichail, v.karamichail@outlook.com
+; Updated to version 6.4.0+ by Vasileios Karamichail, v.karamichail@outlook.com
 ;
 
 [LangOptions]
@@ -22,13 +22,11 @@ LanguageCodePage=1253
 ; If the language you are translating to requires special font faces or
 ; sizes, uncomment any of the following entries and change them accordingly.
 ;DialogFontName=
-;DialogFontSize=8
-;WelcomeFontName=Verdana
-;WelcomeFontSize=12
-;TitleFontName=Arial
-;TitleFontSize=29
-;CopyrightFontName=Arial
-;CopyrightFontSize=8
+;DialogFontSize=9
+;DialogFontBaseScaleWidth=7
+;DialogFontBaseScaleHeight=15
+;WelcomeFontName=Segoe UI
+;WelcomeFontSize=14
 
 [Messages]
 
@@ -69,14 +67,6 @@ SetupAppRunningError=Ο Οδηγός Εγκατάστασης εντόπισε �
 UninstallAppRunningError=Ο Οδηγός Απεγκατάστασης εντόπισε ότι η εφαρμογή %1 εκτελείται ήδη.%n%nΠαρακαλώ κλείστε την εφαρμογή τώρα και πατήστε ΟΚ για να συνεχίσετε, ή Άκυρο για έξοδο.
 
 ; *** Startup questions
-PrivilegesRequiredOverrideTitle=Επιλέξτε Τρόπο Εγκατάστασης
-PrivilegesRequiredOverrideInstruction=Επιλέξτε τον τρόπο εγκατάστασης
-PrivilegesRequiredOverrideText1=Το %1 μπορεί να εγκατασταθεί για όλους τους χρήστες (απαιτεί δικαιώματα διαχειριστή) ή μόνο για εσάς.
-PrivilegesRequiredOverrideText2=Το %1 μπορεί να εγκατασταθεί μόνο για εσάς ή για όλους τους χρήστες (απαιτεί δικαιώματα διαχειριστή).
-PrivilegesRequiredOverrideAllUsers=Εγκατάσταση για &όλους τους χρήστες
-PrivilegesRequiredOverrideAllUsersRecommended=Εγκατάσταση για όλ&ους τους χρήστες (συνιστάται)
-PrivilegesRequiredOverrideCurrentUser=Εγκατάσταση μόνο για &εμένα
-PrivilegesRequiredOverrideCurrentUserRecommended=Εγκατάσταση μόνο για &εμένα (συνιστάται)
 
 ; *** Misc. errors
 ErrorCreatingDir=Η εγκατάσταση δεν μπόρεσε να δημιουργήσει τον φάκελο "%1"
@@ -156,7 +146,6 @@ WizardSelectDir=Επιλογή Φακέλου Εγκατάστασης
 SelectDirDesc=Πού θέλετε να εγκατασταθεί το [name];
 SelectDirLabel3=Ο Οδηγός Εγκατάστασης θα εγκαταστήσει το [name] στον ακόλουθο φάκελο.
 SelectDirBrowseLabel=Για να συνεχίσετε, πατήστε Επόμενο. Εάν θέλετε να επιλέξετε διαφορετικό φάκελο, πατήστε Αναζήτηση.
-DiskSpaceGBLabel=Απαιτούνται τουλάχιστον [gb] GB ελεύθερου χώρου στο δίσκο.
 DiskSpaceMBLabel=Απαιτούνται τουλάχιστον [mb] MB ελεύθερου χώρου στο δίσκο.
 CannotInstallToNetworkDrive=Η εγκατάσταση δεν μπορεί να γίνει σε δίσκο δικτύου.
 CannotInstallToUNCPath=Η εγκατάσταση δεν μπορεί να γίνει σε διαδρομή UNC.
@@ -184,7 +173,6 @@ NoUninstallWarningTitle=Οι Λειτουργικές Μονάδες Υπάρχ�
 NoUninstallWarning=Ο Οδηγός Εγκατάστασης εντόπισε ότι τα ακόλουθα στοιχεία είναι ήδη εγκατεστημένα στον υπολογιστή σας:%n%n%1%n%nΑποεπιλέγοντας αυτά τα στοιχεία δεν θα απεγκατασταθούν.%n%nΘέλετε να συνεχίσετε παρόλα αυτά;
 ComponentSize1=%1 KB
 ComponentSize2=%1 MB
-ComponentsDiskSpaceGBLabel=Η τρέχουσα επιλογή απαιτεί τουλάχιστον [gb] GB χώρου στο δίσκο.
 ComponentsDiskSpaceMBLabel=Η τρέχουσα επιλογή απαιτεί τουλάχιστον [mb] MB χώρου στο δίσκο.
 
 ; *** "Select Additional Tasks" wizard page
@@ -216,16 +204,19 @@ ReadyMemoGroup=Φάκελος στο μενού Έναρξη:
 ReadyMemoTasks=Επιπλέον ενέργειες:
 
 ; *** TDownloadWizardPage wizard page and DownloadTemporaryFile
-DownloadingLabel=Λήψη πρόσθετων αρχείων...
-ButtonStopDownload=&Διακοπή λήψης
-StopDownload=Είστε βέβαιοι ότι θέλετε να διακόψετε τη λήψη;
-ErrorDownloadAborted=Η λήψη ακυρώθηκε
-ErrorDownloadFailed=Η λήψη απέτυχε: %1 %2
-ErrorDownloadSizeFailed=Η λήψη του μεγέθους απέτυχε: %1 %2
-ErrorFileHash1=Αποτυχία υπολογισμού hash: %1
-ErrorFileHash2=Μη έγκυρο hash: αναμενόμενο %1, βρέθηκε %2
-ErrorProgress=Μη έγκυρη πρόοδος: %1 από %2
-ErrorFileSize=Μη έγκυρο μέγεθος αρχείου: αναμενόμενο %1, βρέθηκε %2
+DownloadingLabel2=Λήψη αρχείων...
+
+; *** TExtractionWizardPage wizard page and ExtractArchive
+ExtractingLabel=Αποσυμπίεση αρχείων...
+ButtonStopExtraction=&Διακοπή αποσυμπίεσης
+StopExtraction=Είστε βέβαιοι ότι θέλετε να διακόψετε την αποσυμπίεση;
+ErrorExtractionAborted=Η αποσυμπίεση ακυρώθηκε
+ErrorExtractionFailed=Η αποσυμπίεση απέτυχε: %1
+
+; *** Archive extraction failure details
+ArchiveIncorrectPassword=Ο κωδικός πρόσβασης είναι λανθασμένος
+ArchiveIsCorrupted=Το συμπιεσμένο αρχείο είναι κατεστραμμένο
+ArchiveUnsupportedFormat=Η μορφή του συμπιεσμένου αρχείου δεν υποστηρίζεται
 
 ; *** "Preparing to Install" wizard page
 WizardPreparing=Προετοιμασία Εγκατάστασης
@@ -237,7 +228,6 @@ ApplicationsFound2=Οι ακόλουθες εφαρμογές χρησιμοπο
 CloseApplications=&Αυτόματο κλείσιμο των εφαρμογών
 DontCloseApplications=&Χωρίς κλείσιμο των εφαρμογών
 ErrorCloseApplications=Ο Οδηγός Εγκατάστασης δεν μπόρεσε να κλείσει αυτόματα όλες τις εφαρμογές. Συνιστάται να κλείσετε όλες τις εφαρμογές που χρησιμοποιούν αρχεία που πρέπει να ενημερωθούν από τον Οδηγό Εγκατάστασης προτού συνεχίσετε.
-PrepareToInstallNeedsRestart=Ο Οδηγός Εγκατάστασης πρέπει να κάνει επανεκκίνηση του υπολογιστή σας. Μετά την επανεκκίνηση του υπολογιστή σας, εκτελέστε ξανά τον Οδηγό Εγκατάστασης για να ολοκληρώσετε την εγκατάσταση του [name].%n%nΘα θέλατε να κάνετε επανεκκίνηση τώρα;
 
 ; *** "Installing" wizard page
 WizardInstalling=Εγκατάσταση
@@ -267,15 +257,15 @@ SelectDirectoryLabel=Παρακαλώ καθορίσετε την τοποθεσ
 
 ; *** Installation phase messages
 SetupAborted=Η εγκατάσταση δεν ολοκληρώθηκε.%n%nΠαρακαλώ, διορθώστε το πρόβλημα και εκτελέστε ξανά τον Οδηγό Εγκατάστασης.
-AbortRetryIgnoreSelectAction=Επιλέξτε ενέργεια
-AbortRetryIgnoreRetry=&Δοκιμή
-AbortRetryIgnoreIgnore=&Αγνόηση και συνέχεια
-AbortRetryIgnoreCancel=Ακυρώση εγκατάστασης
+RetryCancelSelectAction=Επιλέξτε ενέργεια
+RetryCancelRetry=&Δοκιμή ξανά
+RetryCancelCancel=Ακύρωση
 
 ; *** Installation status messages
 StatusClosingApplications=Κλείσιμο εφαρμογών...
 StatusCreateDirs=Δημιουργία φακέλων...
 StatusExtractFiles=Αποσυμπίεση αρχείων...
+StatusDownloadFiles=Λήψη αρχείων...
 StatusCreateIcons=Δημιουργία συντομεύσεων...
 StatusCreateIniEntries=Δημιουργία καταχωρήσεων INI...
 StatusCreateRegistryEntries=Δημιουργία καταχωρήσεων στο μητρώο...
@@ -301,28 +291,23 @@ ErrorRegWriteKey=Σφάλμα καταχώρησης κλειδιού μητρώ
 ErrorIniEntry=Σφάλμα στη δημιουργία καταχώρησης INI στο αρχείο "%1".
 
 ; *** File copying errors
-FileAbortRetryIgnoreSkipNotRecommended=&Παράλειψη αυτού του αρχείου (δεν συνιστάται)
-FileAbortRetryIgnoreIgnoreNotRecommended=Παράλειψη σφάλματος και &συνέχεια (δεν συνιστάται)
 SourceIsCorrupted=Το αρχείο προέλευσης είναι κατεστραμμένο
 SourceDoesntExist=Το αρχείο προέλευσης "%1" δεν υπάρχει
-ExistingFileReadOnly2=Το υπάρχον αρχείο δεν μπόρεσε να αντικατασταθεί επειδή είναι μόνο για ανάγνωση.
-ExistingFileReadOnlyRetry=&Καταργήστε το χαρακτηριστικό μόνο για ανάγνωση και δοκιμάστε ξανά
-ExistingFileReadOnlyKeepExisting=&Διατηρήστε το υπάρχον αρχείο
+SourceVerificationFailed=Η επαλήθευση του αρχείου προέλευσης απέτυχε: %1
+VerificationSignatureDoesntExist=Το αρχείο υπογραφής "%1" δεν υπάρχει
+VerificationSignatureInvalid=Το αρχείο υπογραφής "%1" δεν είναι έγκυρο
+VerificationKeyNotFound=Το αρχείο υπογραφής "%1" χρησιμοποιεί άγνωστο κλειδί
+VerificationFileNameIncorrect=Το όνομα του αρχείου δεν είναι σωστό
+VerificationFileTagIncorrect=Η ετικέτα του αρχείου δεν είναι σωστή
+VerificationFileSizeIncorrect=Το μέγεθος του αρχείου δεν είναι σωστό
+VerificationFileHashIncorrect=Το hash του αρχείου δεν είναι σωστό
 ErrorReadingExistingDest=Παρουσιάστηκε σφάλμα κατά την προσπάθεια ανάγνωσης του υπάρχοντος αρχείου:
-FileExistsSelectAction=Επιλέξτε ενέργεια
-FileExists2=Το αρχείο υπάρχει ήδη.
-FileExistsOverwriteExisting=&Αντικατάσταση υπάρχοντος αρχείου
-FileExistsKeepExisting=&Διατήρηση υπάρχοντος αρχείου
-FileExistsOverwriteOrKeepAll=&Να γίνει το ίδιο για τις επόμενες διενέξεις
-ExistingFileNewerSelectAction=Επιλέξτε ενέργεια
-ExistingFileNewer2=Το υπάρχον αρχείο είναι νεότερο από αυτό που προσπαθεί να εγκαταστήσει ο Οδηγός Εγκατάστασης.
-ExistingFileNewerOverwriteExisting=&Αντικατάσταση υπάρχοντος αρχείου
-ExistingFileNewerKeepExisting=&Διατήρηση υπάρχοντος αρχείου (συνιστάται)
-ExistingFileNewerOverwriteOrKeepAll=&Να γίνει το ίδιο για τις επόμενες διενέξεις
 ErrorChangingAttr=Παρουσιάστηκε σφάλμα κατά την προσπάθεια αλλαγής των χαρακτηριστικών του υπάρχοντος αρχείου:
 ErrorCreatingTemp=Παρουσιάστηκε σφάλμα κατά την προσπάθεια δημιουργίας ενός αρχείου στον φακέλο προορισμού:
 ErrorReadingSource=Παρουσιάστηκε σφάλμα κατά την προσπάθεια ανάγνωσης του αρχείου προέλευσης:
 ErrorCopying=Παρουσιάστηκε σφάλμα κατά την προσπάθεια αντιγραφής ενός αρχείου:
+ErrorDownloading=Παρουσιάστηκε σφάλμα κατά την προσπάθεια λήψης ενός αρχείου:
+ErrorExtracting=Παρουσιάστηκε σφάλμα κατά την προσπάθεια αποσυμπίεσης ενός αρχείου:
 ErrorReplacingExistingFile=Παρουσιάστηκε σφάλμα κατά την προσπάθεια αντικατάστασης του υπάρχοντος αρχείου:
 ErrorRestartReplace=Η ΕπανεκκίνησηΑντικατάσταση απέτυχε:
 ErrorRenamingTemp=Παρουσιάστηκε σφάλμα κατά την προσπάθεια μετονομασίας ενός αρχείου στον φακέλο προορισμού:
@@ -332,13 +317,7 @@ ErrorRegisterTypeLib=Δεν είναι δυνατή η καταχώριση τη
 
 ; *** Uninstall display name markings
 ; used for example as 'My Program (32-bit)'
-UninstallDisplayNameMark=%1 (%2)
 ; used for example as 'My Program (32-bit, All users)'
-UninstallDisplayNameMarks=%1 (%2, %3)
-UninstallDisplayNameMark32Bit=32-bit
-UninstallDisplayNameMark64Bit=64-bit
-UninstallDisplayNameMarkAllUsers=Ολοι οι χρήστες
-UninstallDisplayNameMarkCurrentUser=Τρέχων χρήστης
 
 ; *** Post-installation errors
 ErrorOpeningReadme=Παρουσιάστηκε σφάλμα κατά την προσπάθεια ανοίγματος του αρχείου README.
@@ -373,6 +352,49 @@ ShutdownBlockReasonUninstallingApp=Απεγκατάσταση του %1.
 ; The custom messages below aren't used by Setup itself, but if you make
 ; use of them in your scripts, you'll want to translate them.
 
+AbortRetryIgnoreCancel=Cancel installation
+AbortRetryIgnoreSelectAction=Select action
+AbortRetryIgnoreIgnore=&Ignore the error and continue
+AbortRetryIgnoreRetry=&Try again
+ButtonStopDownload=&Stop download
+ComponentsDiskSpaceGBLabel=Current selection requires at least [gb] GB of disk space.
+DiskSpaceGBLabel=At least [gb] GB of free disk space is required.
+ErrorDownloadAborted=Download aborted
+ErrorDownloadFailed=Download failed: %1 %2
+ErrorDownloadSizeFailed=Getting size failed: %1 %2
+ErrorFileSize=Invalid file size: expected %1, found %2
+ErrorProgress=Invalid progress: %1 of %2
+ExistingFileNewerSelectAction=Select action
+ExistingFileNewer2=The existing file is newer than the one Setup is trying to install.
+ExistingFileNewerOverwriteExisting=&Overwrite the existing file
+ExistingFileNewerKeepExisting=&Keep the existing file (recommended)
+ExistingFileNewerOverwriteOrKeepAll=&Do this for the next conflicts
+ExistingFileReadOnly2=The existing file could not be replaced because it is marked read-only.
+ExistingFileReadOnlyRetry=&Remove the read-only attribute and try again
+ExistingFileReadOnlyKeepExisting=&Keep the existing file
+FileAbortRetryIgnoreSkipNotRecommended=&Skip this file (not recommended)
+FileAbortRetryIgnoreIgnoreNotRecommended=&Ignore the error and continue (not recommended)
+FileExistsSelectAction=Select action
+FileExists2=The file already exists.
+FileExistsOverwriteExisting=&Overwrite the existing file
+FileExistsKeepExisting=&Keep the existing file
+FileExistsOverwriteOrKeepAll=&Do this for the next conflicts
+PrepareToInstallNeedsRestart=Setup must restart your computer. After restarting your computer, run Setup again to complete the installation of [name].%n%nWould you like to restart now?
+PrivilegesRequiredOverrideTitle=Select Setup Install Mode
+PrivilegesRequiredOverrideInstruction=Select install mode
+PrivilegesRequiredOverrideText1=%1 can be installed for all users (requires administrative privileges), or for you only.
+PrivilegesRequiredOverrideText2=%1 can be installed for you only, or for all users (requires administrative privileges).
+PrivilegesRequiredOverrideAllUsers=Install for &all users
+PrivilegesRequiredOverrideAllUsersRecommended=Install for &all users (recommended)
+PrivilegesRequiredOverrideCurrentUser=Install for &me only
+PrivilegesRequiredOverrideCurrentUserRecommended=Install for &me only (recommended)
+StopDownload=Are you sure you want to stop the download?
+UninstallDisplayNameMark=%1 (%2)
+UninstallDisplayNameMarks=%1 (%2, %3)
+UninstallDisplayNameMark32Bit=32-bit
+UninstallDisplayNameMark64Bit=64-bit
+UninstallDisplayNameMarkAllUsers=All users
+UninstallDisplayNameMarkCurrentUser=Current user
 [CustomMessages]
 
 NameAndVersion=%1 έκδοση %2
@@ -387,4 +409,3 @@ AssocingFileExtension=Γίνεται συσχέτιση του %1 με την ε
 AutoStartProgramGroupDescription=Εκκίνηση:
 AutoStartProgram=Αυτόματη εκκίνηση του %1
 AddonHostProgramNotFound=Το %1 δε βρέθηκε στο φάκελο που επιλέξατε.%n%nΘέλετε να συνεχίσετε παρόλα αυτά;
-

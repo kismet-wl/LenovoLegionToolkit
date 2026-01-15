@@ -3,6 +3,8 @@ name: Build
 on:
   push:
     branches: [ master ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ master ]
 
@@ -14,16 +16,30 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 8.0.x
+    - name: Get Version from Git Tag
+      id: get_version
+      run: |
+        if ("${{ github.ref }}" -match "refs/tags/v(.*)") {
+          $VERSION = $matches[1]
+          echo "version=$VERSION" >> $env:GITHUB_OUTPUT
+          echo "Using version from Git Tag: $VERSION"
+        } else {
+          $VERSION = "2.15.0-dev"
+          echo "version=$VERSION" >> $env:GITHUB_OUTPUT
+          echo "Using default version: $VERSION"
+        }
     - name: Restore
       run: dotnet restore
     - name: Build
-      run: .\make.bat
+      run: .\make.bat ${{ steps.get_version.outputs.version }}
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: installer
-        path: build_installer\LenovoLegionToolkitSetup.exe
+        path: build_installer\LenovoLegionToolkitSetup-*.exe

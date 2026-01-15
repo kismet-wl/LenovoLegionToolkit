@@ -187,6 +187,25 @@ public partial class App
 
     private void Application_Exit(object sender, ExitEventArgs e)
     {
+#if !DEBUG
+        try
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"Cleaning up WMI resources...");
+
+            LenovoLegionToolkit.Lib.System.Management.WMICache.Shutdown();
+            LenovoLegionToolkit.Lib.System.Management.WMIConnectionPool.Shutdown();
+
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"WMI resources cleaned up.");
+        }
+        catch (Exception ex)
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"Failed to clean up WMI resources", ex);
+        }
+#endif
+
         _singleInstanceMutex?.Close();
     }
 

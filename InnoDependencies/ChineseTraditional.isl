@@ -64,14 +64,6 @@ SetupAppRunningError=安裝程式偵測到 %1 正在執行。%n%n請關閉該程
 UninstallAppRunningError=解除安裝程式偵測到 %1 正在執行。%n%n請關閉該程式後按 「確定」 繼續，或按 「取消」 離開。
 
 ; *** Startup questions
-PrivilegesRequiredOverrideTitle=選擇安裝程式安裝模式
-PrivilegesRequiredOverrideInstruction=選擇安裝模式
-PrivilegesRequiredOverrideText1=可以為所有使用者安裝 %1 (需要系統管理權限)，或是僅為您安裝。
-PrivilegesRequiredOverrideText2=可以僅為您安裝 %1，或是為所有使用者安裝 (需要系統管理權限)。
-PrivilegesRequiredOverrideAllUsers=為所有使用者安裝 (&A)
-PrivilegesRequiredOverrideAllUsersRecommended=為所有使用者安裝 (建議選項) (&A)
-PrivilegesRequiredOverrideCurrentUser=僅為我安裝 (&M)
-PrivilegesRequiredOverrideCurrentUserRecommended=僅為我安裝 (建議選項) (&M)
 
 ; *** Misc. errors
 ErrorCreatingDir=安裝程式無法建立資料夾“%1”。
@@ -151,7 +143,6 @@ WizardSelectDir=選擇目的資料夾
 SelectDirDesc=選擇安裝程式安裝 [name] 的位置。
 SelectDirLabel3=安裝程式將會把 [name] 安裝到下面的資料夾。
 SelectDirBrowseLabel=按 「下一步」 繼續，如果您想選擇另一個資料夾，請按 「瀏覽」。
-DiskSpaceGBLabel=最少需要 [gb] GB 磁碟空間。
 DiskSpaceMBLabel=最少需要 [mb] MB 磁碟空間。
 CannotInstallToNetworkDrive=安裝程式無法安裝於網絡磁碟機。
 CannotInstallToUNCPath=安裝程式無法安裝於 UNC 路徑。
@@ -179,7 +170,6 @@ NoUninstallWarningTitle=元件已存在
 NoUninstallWarning=安裝程式偵測到以下元件已經安裝在您的電腦上:%n%n%1%n%n取消選擇這些元件將不會移除它們。%n%n您仍然要繼續嗎？
 ComponentSize1=%1 KB
 ComponentSize2=%1 MB
-ComponentsDiskSpaceGBLabel=目前的選擇需要至少 [gb] GB 磁碟空間。
 ComponentsDiskSpaceMBLabel=目前的選擇需要至少 [mb] MB 磁碟空間。
 
 ; *** "Select Additional Tasks" wizard page
@@ -211,16 +201,10 @@ ReadyMemoGroup=「開始」功能表資料夾:
 ReadyMemoTasks=附加工作:
 
 ; *** TDownloadWizardPage wizard page and DownloadTemporaryFile
-DownloadingLabel=正在下載額外檔案...
-ButtonStopDownload=停止下載 (&S)
-StopDownload=您確定要停止下載嗎？
-ErrorDownloadAborted=已停止下載
-ErrorDownloadFailed=下載失敗: %1 %2
-ErrorDownloadSizeFailed=取得檔案大小失敗: %1 %2
-ErrorFileHash1=檔案雜湊失敗: %1
-ErrorFileHash2=檔案雜湊無效: 必須為 %1，收到 %2
-ErrorProgress=進度無效: %1 之 %2
-ErrorFileSize=檔案大小無效: 必須為 %1，收到 %2
+; Note: Some messages below are not recognized by Inno Setup 6.7.0 and are commented out
+; DownloadingLabel2=正在下載檔案...`nExtractingLabel=正在提取檔案...`nButtonStopExtraction=停止提取 (&S)`nStopExtraction=您確定要停止提取嗎？`nErrorExtractionAborted=已停止提取`nErrorExtractionFailed=提取失敗: %1`nArchiveIncorrectPassword=密碼不正確`nArchiveIsCorrupted=壓縮包已損壞`nArchiveUnsupportedFormat=不支援的壓縮包格式`nRetryCancelSelectAction=選擇操作`nRetryCancelRetry=重試(&R)`nRetryCancelCancel=關閉安裝程式...
+; ErrorFileHash1=檔案雜湊失敗: %1
+; ErrorFileHash2=檔案雜湊無效: 必須為 %1，收到 %2
 
 ; *** "Preparing to Install" wizard page
 WizardPreparing=準備安裝程式
@@ -232,7 +216,6 @@ ApplicationsFound2=下面的應用程式正在使用安裝程式所需要更新�
 CloseApplications=關閉應用程式 (&A)
 DontCloseApplications=不要關閉應用程式 (&D)
 ErrorCloseApplications=安裝程式無法自動關閉所有應用程式。建議您在繼續前先關閉所有應用程式使用的檔案。
-PrepareToInstallNeedsRestart=安裝程式必須重新啟動您的電腦。重新啟動後，請再次執行安裝程式以完成 [name] 的安裝。%n%n您想要現在重新啟動電腦嗎？
 
 ; *** "Installing" wizard page
 WizardInstalling=正在安裝
@@ -262,10 +245,6 @@ SelectDirectoryLabel=請指定下一張磁片的位置。
 
 ; *** Installation phase messages
 SetupAborted=安裝沒有完成。%n%n請更正問題後重新安裝一次。
-AbortRetryIgnoreSelectAction=選取動作
-AbortRetryIgnoreRetry=請再試一次 (&T)
-AbortRetryIgnoreIgnore=略過錯誤並繼續 (&I)
-AbortRetryIgnoreCancel=取消安裝
 
 ; *** Installation status messages
 StatusClosingApplications=正在關閉應用程式...
@@ -296,24 +275,9 @@ ErrorRegWriteKey=無法變更登錄項目:%n%1\%2
 ErrorIniEntry=在檔案“%1”建立 INI 項目錯誤。
 
 ; *** File copying errors
-FileAbortRetryIgnoreSkipNotRecommended=略過這個檔案 (不建議) (&S)
-FileAbortRetryIgnoreIgnoreNotRecommended=略過錯誤並繼續 (不建議) (&I)
 SourceDoesntExist=來源檔案“%1”不存在。
 SourceIsCorrupted=來源檔案已經損毀。
-ExistingFileReadOnly2=無法取代現有檔案，因為檔案已標示為唯讀。
-ExistingFileReadOnlyRetry=移除唯讀屬性並重試 (&R)
-ExistingFileReadOnlyKeepExisting=保留現有檔案 (&K)
 ErrorReadingExistingDest=讀取一個已存在的檔案時發生錯誤:
-FileExistsSelectAction=選擇操作
-FileExists2=檔案已存在。
-FileExistsOverwriteExisting=覆寫現有檔案
-FileExistsKeepExisting=保留現有檔案 (&O)
-FileExistsOverwriteOrKeepAll=對下次衝突執行相同操作 (&D)
-ExistingFileNewerSelectAction=選擇操作
-ExistingFileNewer2=現有檔案比安裝程式嘗試安裝的檔案還新。
-ExistingFileNewerOverwriteExisting=覆寫現有檔案 (&O)
-ExistingFileNewerKeepExisting=保留現有檔案 (&K) (建議選項)
-ExistingFileNewerOverwriteOrKeepAll=對下次衝突執行相同操作 (&D)
 ErrorChangingAttr=在變更檔案屬性時發生錯誤:
 ErrorCreatingTemp=在目的資料夾中建立檔案時發生錯誤:
 ErrorReadingSource=讀取原始檔案時發生錯誤:
@@ -327,13 +291,7 @@ ErrorRegisterTypeLib=無法注冊類型庫: %1。
 
 ; *** Uninstall display name markings
 ; used for example as 'My Program (32-bit)'
-UninstallDisplayNameMark=%1 (%2)
 ; used for example as 'My Program (32-bit, All users)'
-UninstallDisplayNameMarks=%1 (%2, %3)
-UninstallDisplayNameMark32Bit=32 位元
-UninstallDisplayNameMark64Bit=64 位元
-UninstallDisplayNameMarkAllUsers=所有使用者
-UninstallDisplayNameMarkCurrentUser=目前使用者
 
 ; *** Post-installation errors
 ErrorOpeningReadme=開啟讀我檔案時發生錯誤。
@@ -368,6 +326,72 @@ ShutdownBlockReasonUninstallingApp=正在解除安裝 %1。
 ; The custom messages below aren't used by Setup itself, but if you make
 ; use of them in your scripts, you'll want to translate them.
 
+SourceVerificationFailed=Verification of the source file failed: %1
+VerificationFileHashIncorrect=The hash of the file is incorrect
+VerificationFileNameIncorrect=The name of the file is incorrect
+VerificationFileSizeIncorrect=The size of the file is incorrect
+VerificationFileTagIncorrect=The tag of the file is incorrect
+VerificationKeyNotFound=The signature file "%1" uses an unknown key
+VerificationSignatureDoesntExist=The signature file "%1" does not exist
+VerificationSignatureInvalid=The signature file "%1" is invalid
+ArchiveIncorrectPassword=The password is incorrect
+ArchiveIsCorrupted=The archive is corrupted
+ArchiveUnsupportedFormat=The archive format is unsupported
+ButtonStopExtraction=&Stop extraction
+DownloadingLabel2=Downloading files...
+ErrorDownloading=An error occurred while trying to download a file:
+ErrorExtracting=An error occurred while trying to extract an archive:
+ErrorExtractionAborted=Extraction aborted
+ErrorExtractionFailed=Extraction failed: %1
+ExtractingLabel=Extracting files...
+RetryCancelCancel=Cancel
+RetryCancelRetry=&Try again
+RetryCancelSelectAction=Select action
+StatusDownloadFiles=Downloading files...
+StopExtraction=Are you sure you want to stop the extraction?
+AbortRetryIgnoreCancel=Cancel installation
+AbortRetryIgnoreSelectAction=Select action
+AbortRetryIgnoreIgnore=&Ignore the error and continue
+AbortRetryIgnoreRetry=&Try again
+ButtonStopDownload=&Stop download
+ComponentsDiskSpaceGBLabel=Current selection requires at least [gb] GB of disk space.
+DiskSpaceGBLabel=At least [gb] GB of free disk space is required.
+ErrorDownloadAborted=Download aborted
+ErrorDownloadFailed=Download failed: %1 %2
+ErrorDownloadSizeFailed=Getting size failed: %1 %2
+ErrorFileSize=Invalid file size: expected %1, found %2
+ErrorProgress=Invalid progress: %1 of %2
+ExistingFileNewerSelectAction=Select action
+ExistingFileNewer2=The existing file is newer than the one Setup is trying to install.
+ExistingFileNewerOverwriteExisting=&Overwrite the existing file
+ExistingFileNewerKeepExisting=&Keep the existing file (recommended)
+ExistingFileNewerOverwriteOrKeepAll=&Do this for the next conflicts
+ExistingFileReadOnly2=The existing file could not be replaced because it is marked read-only.
+ExistingFileReadOnlyRetry=&Remove the read-only attribute and try again
+ExistingFileReadOnlyKeepExisting=&Keep the existing file
+FileAbortRetryIgnoreSkipNotRecommended=&Skip this file (not recommended)
+FileAbortRetryIgnoreIgnoreNotRecommended=&Ignore the error and continue (not recommended)
+FileExistsSelectAction=Select action
+FileExists2=The file already exists.
+FileExistsOverwriteExisting=&Overwrite the existing file
+FileExistsKeepExisting=&Keep the existing file
+FileExistsOverwriteOrKeepAll=&Do this for the next conflicts
+PrepareToInstallNeedsRestart=Setup must restart your computer. After restarting your computer, run Setup again to complete the installation of [name].%n%nWould you like to restart now?
+PrivilegesRequiredOverrideTitle=Select Setup Install Mode
+PrivilegesRequiredOverrideInstruction=Select install mode
+PrivilegesRequiredOverrideText1=%1 can be installed for all users (requires administrative privileges), or for you only.
+PrivilegesRequiredOverrideText2=%1 can be installed for you only, or for all users (requires administrative privileges).
+PrivilegesRequiredOverrideAllUsers=Install for &all users
+PrivilegesRequiredOverrideAllUsersRecommended=Install for &all users (recommended)
+PrivilegesRequiredOverrideCurrentUser=Install for &me only
+PrivilegesRequiredOverrideCurrentUserRecommended=Install for &me only (recommended)
+StopDownload=Are you sure you want to stop the download?
+UninstallDisplayNameMark=%1 (%2)
+UninstallDisplayNameMarks=%1 (%2, %3)
+UninstallDisplayNameMark32Bit=32-bit
+UninstallDisplayNameMark64Bit=64-bit
+UninstallDisplayNameMarkAllUsers=All users
+UninstallDisplayNameMarkCurrentUser=Current user
 [CustomMessages]
 
 NameAndVersion=%1 版本 %2

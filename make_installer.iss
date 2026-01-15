@@ -10,6 +10,10 @@
   #define MyAppVersion "0.0.1"
 #endif
 
+#ifndef MyAppVersionInfo
+  #define MyAppVersion MyAppVersion
+#endif
+
 [Setup]
 UsedUserAreasWarning=false
 AppId={{0C37B9AC-9C3D-4302-8ABB-125C7C7D83D5}
@@ -23,13 +27,15 @@ DefaultDirName={userpf}\{#MyAppNameCompact}
 DisableProgramGroupPage=yes
 LicenseFile=LICENSE
 PrivilegesRequired=admin
-OutputBaseFilename=LenovoLegionToolkitSetup
-Compression=lzma2/ultra64  
+OutputBaseFilename=LenovoLegionToolkitSetup-{#MyAppVersion}
+Compression=lzma2/ultra64
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#MyAppExeName}
 OutputDir=build_installer
-ArchitecturesInstallIn64BitMode=x64
+ArchitecturesInstallIn64BitMode=x64os
+VersionInfoVersion={#MyAppVersionInfo}
+VersionInfoTextVersion={#MyAppVersion}
 
 [Code]
 function InitializeSetup: Boolean;

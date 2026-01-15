@@ -1,0 +1,31 @@
+<Project>
+  <PropertyGroup>
+    <!-- 语义化版本号 -->
+    <Version>2.15.0</Version>
+    
+    <!-- 文件版本（用于 Windows 资源） -->
+    <FileVersion>2.15.0</FileVersion>
+    
+    <!-- 程序集版本（主版本号，用于 .NET 程序集绑定） -->
+    <AssemblyVersion>2.0.0.0</AssemblyVersion>
+    
+    <!-- 产品信息 -->
+    <Product>Lenovo Legion Toolkit</Product>
+    <Company>Bartosz Cichecki</Company>
+    <Copyright>© 2024 Bartosz Cichecki</Copyright>
+    
+    <!-- 程序集信息 -->
+    <Description>Lenovo Legion Toolkit - Lenovo Legion devices control software</Description>
+    
+    <!-- 发布版本（用于 NuGet 包） -->
+    <PackageVersion>$(Version)</PackageVersion>
+    
+    <!-- 调试信息配置 -->
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <!-- 发布版本信息 -->
+    <SourceRevisionId>build$([System.DateTime]::UtcNow.ToString("yyyyMMddHHmmss"))</SourceRevisionId>
+  </PropertyGroup>
+</Project>

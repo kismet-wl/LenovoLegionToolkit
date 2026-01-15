@@ -198,16 +198,33 @@ ReadyMemoGroup=Start Menu mape:
 ReadyMemoTasks=Papilduzdevumi:
 
 ; *** TDownloadWizardPage wizard page and DownloadTemporaryFile
-DownloadingLabel=Papildus datņu lejupielāde...
+; Note: Some messages below are not recognized by Inno Setup 6.7.0 and are commented out
+; DownloadingLabel=Papildus datņu lejupielāde...
+DownloadingLabel2=Lejupielādē...
 ButtonStopDownload=&Pārtraukt ielādi
 StopDownload=Jūs tiešām vēlaties pārtraukt lejupielādi?
 ErrorDownloadAborted=Lejupielāde pārtraukta
 ErrorDownloadFailed=Lejupielādes kļūda: %1 %2
 ErrorDownloadSizeFailed=Izmēra kļūda: %1 %2
-ErrorFileHash1=Ошибка хэша файла: %1
-ErrorFileHash2=Неверный хэш файла: ожидался %1, получен %2
+; ErrorFileHash1=Ошибка хэша файла: %1
+; ErrorFileHash2=Неверный хэша файла: ожидался %1, получен %2
 ErrorProgress=Izpildes kļūda: %1 из %2
 ErrorFileSize=Kļūdains faila izmērs: tika gaidīts %1, iegūts %2
+ErrorDownloading=Kļūda mēģinot lejupielādēt failu: %1
+ErrorExtracting=Kļūda mēģinot izvilkt arhīvu: %1
+StatusDownloadFiles=Lejupielādē failus...
+
+; *** TExtractionWizardPage wizard page and ExtractArchive
+ExtractingLabel=Izvel...
+ButtonStopExtraction=&Pārtraukt izveli
+StopExtraction=Vai tiešām vēlaties pārtraukt izveli?
+ErrorExtractionAborted=Izvele pārtraukta
+ErrorExtractionFailed=Izvele neizdevās: %1
+
+; *** Archive extraction failure details
+ArchiveIncorrectPassword=Nepareiza parole
+ArchiveIsCorrupted=Arhīvs bojāts
+ArchiveUnsupportedFormat=Neatbalstīts arhīva formāts
 
 ; *** "Preparing to Install" wizard page
 WizardPreparing=Gatavoties uzstādīšanai
@@ -253,6 +270,9 @@ AbortRetryIgnoreSelectAction=Izvēlieties darbību
 AbortRetryIgnoreRetry=Mēģināt no &jauna
 AbortRetryIgnoreIgnore=&Ignorēt kļūdu un turpināt
 AbortRetryIgnoreCancel=Pārtraukt uzstādīšanu
+RetryCancelSelectAction=Izvēlēties darbību
+RetryCancelRetry=&Mēģināt vēlreiz
+RetryCancelCancel=Pārtraukt
 
 ; *** Installation status messages
 StatusClosingApplications=Programmu aizvēršana...
@@ -287,6 +307,14 @@ FileAbortRetryIgnoreSkipNotRecommended=I&zlaist šo failu (nerekomendējas)
 FileAbortRetryIgnoreIgnoreNotRecommended=&Ignorēt kļūdu un turpināt (nerekomendējas)
 SourceIsCorrupted=Datnes avots ir bojāts
 SourceDoesntExist=Datnes avots "%1" nepastāv
+SourceVerificationFailed=Avota faila pārbaude neizdevās: %1
+VerificationSignatureDoesntExist=Paraksta fails "%1" nepastāv
+VerificationSignatureInvalid=Paraksta fails "%1" nederīgs
+VerificationKeyNotFound=Paraksta fails "%1" izmanto nezināmu atslēgu
+VerificationFileNameIncorrect=Nepareizs faila nosaukums
+VerificationFileTagIncorrect=Nepareiza faila iezīme
+VerificationFileSizeIncorrect=Nepareizs faila izmērs
+VerificationFileHashIncorrect=Nepareizs faila hash
 ExistingFileReadOnly2=Nevar aizstāt esošo failu, tā kā tas ir iezīmēts kā "read only".
 ExistingFileReadOnlyRetry=&Dzēst atribūtu "read only" un atkārtot mēģinājumu
 ExistingFileReadOnlyKeepExisting=&Paturēt esošo failu

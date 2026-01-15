@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace LenovoLegionToolkit.Lib.Utils;
 
-public class SafePerformanceCounter(string categoryName, string counterName, string instanceName)
+public class SafePerformanceCounter(string categoryName, string counterName, string? instanceName)
 {
     private PerformanceCounter? _performanceCounter;
 

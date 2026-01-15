@@ -199,4 +199,6 @@ begin
 
     Dependency_DownloadPage.Hide;
   end;
+  
+  Result := '';
 end;
