@@ -481,8 +481,11 @@ public class GodModeControllerV1(
     private static async Task<StepperValue> GetCPULongTermPowerLimitAsync()
     {
         var defaultValue = await WMI.LenovoCpuMethod.CPUGetDefaultPowerLimitAsync().OrNullIfException().ConfigureAwait(false);
-        var (value, min, max, step) = await WMI.LenovoCpuMethod.CPUGetLongTermPowerLimitAsync().ConfigureAwait(false);
-        return new(value, min, max, step, [], defaultValue?.longTerm);
+        var result = await WMI.LenovoCpuMethod.CPUGetLongTermPowerLimitAsync().OrNullIfException().ConfigureAwait(false);
+        if (result is null)
+            return new(0, 0, 0, 0, [], defaultValue?.longTerm ?? 0);
+        var (value, min, max, step) = result.Value;
+        return new(value, min, max, step, [], defaultValue?.longTerm ?? 0);
     }
 
     private static Task SetCPULongTermPowerLimitAsync(int value) => WMI.LenovoCpuMethod.CPUSetLongTermPowerLimitAsync(value);
@@ -494,8 +497,11 @@ public class GodModeControllerV1(
     private static async Task<StepperValue> GetCPUShortTermPowerLimitAsync()
     {
         var defaultValue = await WMI.LenovoCpuMethod.CPUGetDefaultPowerLimitAsync().OrNullIfException().ConfigureAwait(false);
-        var (value, min, max, step) = await WMI.LenovoCpuMethod.CPUGetShortTermPowerLimitAsync().ConfigureAwait(false);
-        return new(value, min, max, step, [], defaultValue?.shortTerm);
+        var result = await WMI.LenovoCpuMethod.CPUGetShortTermPowerLimitAsync().OrNullIfException().ConfigureAwait(false);
+        if (result is null)
+            return new(0, 0, 0, 0, [], defaultValue?.shortTerm ?? 0);
+        var (value, min, max, step) = result.Value;
+        return new(value, min, max, step, [], defaultValue?.shortTerm ?? 0);
     }
 
     private static Task SetCPUShortTermPowerLimitAsync(int value) => WMI.LenovoCpuMethod.CPUSetShortTermPowerLimitAsync(value);
@@ -506,7 +512,10 @@ public class GodModeControllerV1(
 
     private static async Task<StepperValue> GetCPUPeakPowerLimitAsync()
     {
-        var (value, min, max, step, defaultValue) = await WMI.LenovoCpuMethod.CPUGetPeakPowerLimitAsync().ConfigureAwait(false);
+        var result = await WMI.LenovoCpuMethod.CPUGetPeakPowerLimitAsync().OrNullIfException().ConfigureAwait(false);
+        if (result is null)
+            return new(0, 0, 0, 0, [], 0);
+        var (value, min, max, step, defaultValue) = result.Value;
         return new(value, min, max, step, [], defaultValue);
     }
 
@@ -518,7 +527,10 @@ public class GodModeControllerV1(
 
     private static async Task<StepperValue> GetCPUCrossLoadingPowerLimitAsync()
     {
-        var (value, min, max, step, defaultValue) = await WMI.LenovoCpuMethod.CPUGetCrossLoadingPowerLimitAsync().ConfigureAwait(false);
+        var result = await WMI.LenovoCpuMethod.CPUGetCrossLoadingPowerLimitAsync().OrNullIfException().ConfigureAwait(false);
+        if (result is null)
+            return new(0, 0, 0, 0, [], 0);
+        var (value, min, max, step, defaultValue) = result.Value;
         return new(value, min, max, step, [], defaultValue);
     }
 
@@ -530,7 +542,10 @@ public class GodModeControllerV1(
 
     private static async Task<StepperValue> GetAPUSPPTPowerLimitAsync()
     {
-        var (value, min, max, step, defaultValue) = await WMI.LenovoCpuMethod.GetAPUSPPTPowerLimitAsync().ConfigureAwait(false);
+        var result = await WMI.LenovoCpuMethod.GetAPUSPPTPowerLimitAsync().OrNullIfException().ConfigureAwait(false);
+        if (result is null)
+            return new(0, 0, 0, 0, [], 0);
+        var (value, min, max, step, defaultValue) = result.Value;
         return new(value, min, max, step, [], defaultValue);
     }
 
@@ -542,7 +557,10 @@ public class GodModeControllerV1(
 
     private static async Task<StepperValue> GetCPUTemperatureLimitAsync()
     {
-        var (value, min, max, step, defaultValue) = await WMI.LenovoCpuMethod.CPUGetTemperatureControlAsync().ConfigureAwait(false);
+        var result = await WMI.LenovoCpuMethod.CPUGetTemperatureControlAsync().OrNullIfException().ConfigureAwait(false);
+        if (result is null)
+            return new(0, 0, 0, 0, [], 0);
+        var (value, min, max, step, defaultValue) = result.Value;
         return new(value, min, max, step, [], defaultValue);
     }
 
@@ -555,8 +573,11 @@ public class GodModeControllerV1(
     private static async Task<StepperValue> GetGPUConfigurableTGPAsync()
     {
         var defaultValue = await WMI.LenovoGpuMethod.GPUGetDefaultPPABcTGPPowerLimit().OrNullIfException().ConfigureAwait(false);
-        var (value, min, max, step) = await WMI.LenovoGpuMethod.GPUGetCTGPPowerLimitAsync().ConfigureAwait(false);
-        return new(value, min, max, step, [], defaultValue?.ctgp);
+        var result = await WMI.LenovoGpuMethod.GPUGetCTGPPowerLimitAsync().OrNullIfException().ConfigureAwait(false);
+        if (result is null)
+            return new(0, 0, 0, 0, [], defaultValue?.ctgp ?? 0);
+        var (value, min, max, step) = result.Value;
+        return new(value, min, max, step, [], defaultValue?.ctgp ?? 0);
     }
 
     private static Task SetGPUConfigurableTGPAsync(int value) => WMI.LenovoGpuMethod.GPUSetCTGPPowerLimitAsync(value);
@@ -568,8 +589,11 @@ public class GodModeControllerV1(
     private static async Task<StepperValue> GetGPUPowerBoost()
     {
         var defaultValue = await WMI.LenovoGpuMethod.GPUGetDefaultPPABcTGPPowerLimit().OrNullIfException().ConfigureAwait(false);
-        var (value, min, max, step) = await WMI.LenovoGpuMethod.GPUGetPPABPowerLimitAsync().ConfigureAwait(false);
-        return new(value, min, max, step, [], defaultValue?.ppab);
+        var result = await WMI.LenovoGpuMethod.GPUGetPPABPowerLimitAsync().OrNullIfException().ConfigureAwait(false);
+        if (result is null)
+            return new(0, 0, 0, 0, [], defaultValue?.ppab ?? 0);
+        var (value, min, max, step) = result.Value;
+        return new(value, min, max, step, [], defaultValue?.ppab ?? 0);
     }
 
     private static Task SetGPUPowerBoostAsync(int value) => WMI.LenovoGpuMethod.GPUSetPPABPowerLimitAsync(value);
@@ -580,7 +604,10 @@ public class GodModeControllerV1(
 
     private static async Task<StepperValue> GetGPUTemperatureLimitAsync()
     {
-        var (value, min, max, step, defaultValue) = await WMI.LenovoGpuMethod.GPUGetTemperatureLimitAsync().ConfigureAwait(false);
+        var result = await WMI.LenovoGpuMethod.GPUGetTemperatureLimitAsync().OrNullIfException().ConfigureAwait(false);
+        if (result is null)
+            return new(0, 0, 0, 0, [], 0);
+        var (value, min, max, step, defaultValue) = result.Value;
         return new(value, min, max, step, [], defaultValue);
     }
 

@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using LenovoLegionToolkit.Lib.AutoListeners;
+using LenovoLegionToolkit.Lib.Extensions;
 using LenovoLegionToolkit.Lib.Features;
 using LenovoLegionToolkit.Lib.Listeners;
 using LenovoLegionToolkit.Lib.Settings;
@@ -171,7 +172,7 @@ public class AIController(
             return false;
         }
 
-        if (await WMI.LenovoGameZoneData.GetIntelligentSubModeAsync().ConfigureAwait(false) == 0)
+        if ((await WMI.LenovoGameZoneData.GetIntelligentSubModeAsync().OrNullIfException().ConfigureAwait(false)) == 0)
         {
             if (Log.Instance.IsTraceEnabled)
                 Log.Instance.Trace($"Not needed.");
@@ -191,7 +192,9 @@ public class AIController(
         {
             var targetSubMode = 1;
 
-            var intelligentOpList = await WMI.LenovoIntelligentOPList.ReadAsync().ConfigureAwait(false);
+            var intelligentOpList = await WMI.LenovoIntelligentOPList.ReadAsync().OrNullIfExceptionClass().ConfigureAwait(false);
+            if (intelligentOpList is null)
+                return;
             foreach (var (processName, subMode) in intelligentOpList)
             {
                 var process = Process.GetProcessesByName(Path.GetFileNameWithoutExtension(processName)).FirstOrDefault();

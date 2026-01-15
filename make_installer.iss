@@ -16,7 +16,7 @@
 
 [Setup]
 UsedUserAreasWarning=false
-AppId={{0C37B9AC-9C3D-4302-8ABB-125C7C7D83D5}
+AppId={{0C37B9AC-9C3D-4302-8ABB-125C7C7D83D5}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -27,6 +27,7 @@ DefaultDirName={userpf}\{#MyAppNameCompact}
 DisableProgramGroupPage=yes
 LicenseFile=LICENSE
 PrivilegesRequired=admin
+PrivilegesRequiredOverridesAllowed=commandline
 OutputBaseFilename=LenovoLegionToolkitSetup-{#MyAppVersion}
 Compression=lzma2/ultra64
 SolidCompression=yes
@@ -36,6 +37,7 @@ OutputDir=build_installer
 ArchitecturesInstallIn64BitMode=x64os
 VersionInfoVersion={#MyAppVersionInfo}
 VersionInfoTextVersion={#MyAppVersion}
+SetupIconFile=LenovoLegionToolkit.WPF\Assets\icon.ico
 
 [Code]
 function InitializeSetup: Boolean;
@@ -78,8 +80,8 @@ Source: "build\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createa
 Source: "LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; IconIndex: 0
+Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon; IconIndex: 0
 
 [InstallDelete]
 Type: filesandordirs; Name: "{app}"

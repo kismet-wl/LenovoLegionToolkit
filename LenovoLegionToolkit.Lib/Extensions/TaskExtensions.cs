@@ -10,4 +10,9 @@ public static class TaskExtensions
     {
         return task.ContinueWith(t => t.IsCompletedSuccessfully ? (T?)t.Result : null);
     }
+
+    public static Task<T?> OrNullIfExceptionClass<T>(this Task<T> task) where T : class
+    {
+        return task.ContinueWith(t => t.IsCompletedSuccessfully ? t.Result : null);
+    }
 }
