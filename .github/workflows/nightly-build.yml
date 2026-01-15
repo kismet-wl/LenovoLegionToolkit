@@ -1,0 +1,52 @@
+name: Nightly Build
+
+on:
+  schedule:
+    # 每天 UTC 时间 00:00 运行 (北京时间 08:00)
+    # 注意：schedule 只在默认分支触发，如果 develop 不是默认分支，需要手动触发或使用 push
+    - cron: '0 0 * * *'
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Check for recent commits
+      id: check_commits
+      run: |
+        # 获取最近24小时内的提交数量
+        $since = (Get-Date).AddHours(-24).ToString("yyyy-MM-ddTHH:mm:ssZ")
+        $commits = git log --since="$since" --oneline | Measure-Object
+        "commits_count=$($commits.Count)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        Write-Output "Recent commits (24h): $($commits.Count)"
+        
+        if ($commits.Count -eq 0) {
+          Write-Output "No new commits in the last 24 hours. Skipping build."
+          exit 1
+        }
+    - name: Setup .NET
+      if: steps.check_commits.outputs.commits_count > 0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    - name: Restore
+      if: steps.check_commits.outputs.commits_count > 0
+      run: dotnet restore
+    - name: Build
+      if: steps.check_commits.outputs.commits_count > 0
+      run: .\make.bat
+    - name: Upload artifact
+      if: steps.check_commits.outputs.commits_count > 0
+      uses: actions/upload-artifact@v4
+      with:
+        name: nightly-installer
+        path: build_installer\LenovoLegionToolkitSetup-*.exe
+        retention-days: 7

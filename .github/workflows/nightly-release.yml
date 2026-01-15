@@ -1,0 +1,134 @@
+name: Nightly Release
+
+on:
+  schedule:
+    # 每天 UTC 时间 00:00 运行 (北京时间 08:00)
+    # 注意：schedule 只在默认分支触发，如果 develop 不是默认分支，需要手动触发或使用 push
+    - cron: '0 0 * * *'
+  push:
+    branches: [ develop ]
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Check for recent commits
+      id: check_commits
+      run: |
+        # 获取最近24小时内的提交数量
+        $since = (Get-Date).AddHours(-24).ToString("yyyy-MM-ddTHH:mm:ssZ")
+        $commits = git log --since="$since" --oneline | Measure-Object
+        "commits_count=$($commits.Count)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        Write-Output "Recent commits (24h): $($commits.Count)"
+        
+        if ($commits.Count -eq 0) {
+          Write-Output "No new commits in the last 24 hours. Skipping build."
+          exit 1
+        }
+    - name: Setup .NET
+      if: steps.check_commits.outputs.commits_count > 0
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    - name: Install Inno Setup
+      if: steps.check_commits.outputs.commits_count > 0
+      shell: pwsh
+      run: |
+        # 下载并安装 Inno Setup 6
+        $url = "https://jrsoftware.org/download.php/is.exe"
+        $output = "$env:TEMP\is.exe"
+        Invoke-WebRequest -Uri $url -OutFile $output
+        Start-Process -FilePath $output -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART" -Wait
+        Write-Output "Inno Setup installed successfully"
+    - name: Restore
+      if: steps.check_commits.outputs.commits_count > 0
+      run: dotnet restore
+    - name: Build
+      if: steps.check_commits.outputs.commits_count > 0
+      shell: pwsh
+      run: |
+        & .\make.bat
+        if ($LASTEXITCODE -ne 0) {
+          Write-Output "Build failed with exit code $LASTEXITCODE"
+          exit $LASTEXITCODE
+        }
+        # 检查安装包是否生成
+        if (-not (Test-Path build_installer)) {
+          Write-Output "Error: build_installer directory does not exist"
+          exit 1
+        }
+        $installer = Get-ChildItem build_installer\LenovoLegionToolkitSetup-*.exe -ErrorAction SilentlyContinue
+        if (-not $installer) {
+          Write-Output "Error: No installer found in build_installer directory"
+          Get-ChildItem build_installer -Recurse | Write-Output
+          exit 1
+        }
+        Write-Output "Installer found: $($installer.Name)"
+    - name: Get Installer Filename and Commit Hash
+      id: get_info
+      if: steps.check_commits.outputs.commits_count > 0
+      run: |
+        $installer = Get-ChildItem build_installer\LenovoLegionToolkitSetup-*.exe | Select-Object -First 1
+        "filename=$($installer.Name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        Write-Output "Installer filename: $($installer.Name)"
+        
+        $commitHash = git rev-parse --short HEAD
+        "commit_hash=$commitHash" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        Write-Output "Commit hash: $commitHash"
+        
+        # 生成标签名称（使用特殊前缀避免影响其他工作流）
+        $tagName = "nightly-build-$(Get-Date -Format 'yyyyMMdd')-$commitHash"
+        "tag_name=$tagName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        Write-Output "Tag name: $tagName"
+        
+        # 生成 release 名称
+        $releaseName = "Nightly Build $(Get-Date -Format 'yyyy-MM-dd')"
+        "release_name=$releaseName" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        Write-Output "Release name: $releaseName"
+    - name: Create Tag
+      if: steps.check_commits.outputs.commits_count > 0
+      run: |
+        $tagName = "${{ steps.get_info.outputs.tag_name }}"
+        Write-Output "Creating tag: $tagName"
+        
+        # 检查 tag 是否已存在
+        if (git tag -l "$tagName") {
+          Write-Output "Tag $tagName already exists, deleting it..."
+          git tag -d $tagName
+          git push origin :refs/tags/$tagName || Write-Output "Remote tag does not exist, skipping deletion"
+        }
+        
+        # 创建新的 tag
+        git tag $tagName
+        git push origin $tagName
+    - name: Create Release
+      if: steps.check_commits.outputs.commits_count > 0
+      uses: softprops/action-gh-release@v0.1.13
+      with:
+        tag_name: ${{ steps.get_info.outputs.tag_name }}
+        name: ${{ steps.get_info.outputs.release_name }}
+        body: |
+          ## Nightly Build
+          
+          This is an automated nightly build from the develop branch.
+          
+          **Warning:** Nightly builds may contain bugs and are not recommended for production use.
+          
+          ### Changes
+          See the commit history for details.
+          
+          ### Installation
+          Download the installer below and run it to install the latest nightly build.
+        draft: false
+        prerelease: true
+        files: build_installer/${{ steps.get_info.outputs.filename }}
+        fail_on_unmatched_files: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
