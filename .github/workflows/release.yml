@@ -28,10 +28,10 @@ jobs:
       id: get_installer
       run: |
         $installer = Get-ChildItem build_installer\LenovoLegionToolkitSetup-*.exe | Select-Object -First 1
-        echo "filename=$($installer.Name)" >> $env:GITHUB_OUTPUT
-        echo "Installer filename: $($installer.Name)"
+        "filename=$($installer.Name)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+        Write-Output "Installer filename: $($installer.Name)"
     - name: Release
-      uses: softprops/action-gh-release@v0.1.13
+      uses: softprops/action-gh-release@v2
       with:
         draft: true
         files: build_installer/${{ steps.get_installer.outputs.filename }}

@@ -63,8 +63,8 @@ IF %ERRORLEVEL% EQU 0 (
 IF EXIST git_tag_tmp.txt del git_tag_tmp.txt
 
 REM If no exact tag, use git describe --tags --always --abbrev=7
-REM Skip nightly-build tags by using --exclude
-git describe --tags --always --abbrev=7 --exclude='nightly-build-*' > git_tag_tmp.txt 2>nul
+REM Skip nightly tags by using --exclude
+git describe --tags --always --abbrev=7 --exclude "nightly-*" > git_tag_tmp.txt 2>nul
 IF %ERRORLEVEL% EQU 0 (
     FOR /F "usebackq tokens=*" %%i IN ("git_tag_tmp.txt") DO SET VERSION=%%i
     del git_tag_tmp.txt
@@ -74,7 +74,7 @@ REM Check if VERSION starts with "nightly" (case-insensitive check)
 ECHO %VERSION% | findstr /B /I nightly > nul
 IF %ERRORLEVEL% EQU 0 (
     REM For nightly tags, get the latest version tag instead
-    git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude='nightly-*' > git_tag_tmp.txt 2>nul
+    git describe --tags --abbrev=0 --match '[0-9]*.[0-9]*.[0-9]*' --exclude "nightly-*" > git_tag_tmp.txt 2>nul
     IF %ERRORLEVEL% EQU 0 (
         FOR /F "usebackq tokens=*" %%i IN ("git_tag_tmp.txt") DO SET VERSION=%%i
         del git_tag_tmp.txt
