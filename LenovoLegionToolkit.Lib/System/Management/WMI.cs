@@ -5,6 +5,7 @@ using System.Management;
 using System.Threading.Tasks;
 using LenovoLegionToolkit.Lib.Extensions;
 using LenovoLegionToolkit.Lib.Utils;
+using System.Collections;
 
 namespace LenovoLegionToolkit.Lib.System.Management;
 
@@ -15,7 +16,9 @@ public static partial class WMI
         try
         {
             var queryFormatted = query.ToString(WMIPropertyValueFormatter.Instance);
-            var mos = new ManagementObjectSearcher(scope, queryFormatted);
+            var managementScope = WMIConnectionPool.GetScope(scope);
+            var objectQuery = new ObjectQuery(queryFormatted);
+            var mos = new ManagementObjectSearcher(managementScope, objectQuery);
             var managementObjects = await mos.GetAsync().ConfigureAwait(false);
             return managementObjects.Any();
         }
@@ -28,7 +31,9 @@ public static partial class WMI
     private static LambdaDisposable Listen(string scope, FormattableString query, Action<PropertyDataCollection> handler)
     {
         var queryFormatted = query.ToString(WMIPropertyValueFormatter.Instance);
-        var watcher = new ManagementEventWatcher(scope, queryFormatted);
+        var managementScope = WMIConnectionPool.GetScope(scope);
+        var eventQuery = new EventQuery(queryFormatted);
+        var watcher = new ManagementEventWatcher(managementScope, eventQuery);
         watcher.EventArrived += (_, e) => handler(e.NewEvent.Properties);
         watcher.Start();
 
@@ -44,7 +49,9 @@ public static partial class WMI
         try
         {
             var queryFormatted = query.ToString(WMIPropertyValueFormatter.Instance);
-            var mos = new ManagementObjectSearcher(scope, queryFormatted);
+            var managementScope = WMIConnectionPool.GetScope(scope);
+            var objectQuery = new ObjectQuery(queryFormatted);
+            var mos = new ManagementObjectSearcher(managementScope, objectQuery);
             var managementObjects = await mos.GetAsync().ConfigureAwait(false);
             var result = managementObjects.Select(mo => mo.Properties).Select(converter);
             return result;
@@ -60,16 +67,24 @@ public static partial class WMI
         try
         {
             var queryFormatted = query.ToString(WMIPropertyValueFormatter.Instance);
-            var mos = new ManagementObjectSearcher(scope, queryFormatted);
-            var managementObjects = await mos.GetAsync().ConfigureAwait(false);
-            var managementObject = managementObjects.FirstOrDefault() ?? throw new InvalidOperationException("No results in query");
 
-            var mo = (ManagementObject)managementObject;
-            var methodParamsObject = mo.GetMethodParameters(methodName);
-            foreach (var pair in methodParams)
-                methodParamsObject[pair.Key] = pair.Value;
+            // 使用 Task.Run 包装同步 WMI 调用，避免异步上下文问题
+            await Task.Run(() =>
+            {
+                var managementScope = WMIConnectionPool.GetScope(scope);
+                var objectQuery = new ObjectQuery(queryFormatted);
+                var mos = new ManagementObjectSearcher(managementScope, objectQuery);
+                var managementObjects = mos.Get();
+                var managementObject = managementObjects.OfType<ManagementObject>().FirstOrDefault() ?? throw new InvalidOperationException("No results in query");
 
-            mo.InvokeMethod(methodName, methodParamsObject, new InvokeMethodOptions());
+                var mo = (ManagementObject)managementObject;
+                var methodParamsObject = mo.GetMethodParameters(methodName);
+                foreach (var pair in methodParams)
+                    methodParamsObject[pair.Key] = pair.Value;
+
+                var options = new InvokeMethodOptions { Timeout = TimeSpan.FromSeconds(30) };
+                mo.InvokeMethod(methodName, methodParamsObject, options);
+            }).ConfigureAwait(false);
         }
         catch (ManagementException ex)
         {
@@ -83,18 +98,25 @@ public static partial class WMI
         {
             var queryFormatted = query.ToString(WMIPropertyValueFormatter.Instance);
 
-            var mos = new ManagementObjectSearcher(scope, queryFormatted);
-            var managementObjects = await mos.GetAsync().ConfigureAwait(false);
-            var managementObject = managementObjects.FirstOrDefault() ?? throw new InvalidOperationException("No results in query");
+            // 使用 Task.Run 包装同步 WMI 调用，避免异步上下文问题
+            return await Task.Run(() =>
+            {
+                var managementScope = WMIConnectionPool.GetScope(scope);
+                var objectQuery = new ObjectQuery(queryFormatted);
+                var mos = new ManagementObjectSearcher(managementScope, objectQuery);
+                var managementObjects = mos.Get();
+                var managementObject = managementObjects.OfType<ManagementObject>().FirstOrDefault() ?? throw new InvalidOperationException("No results in query");
 
-            var mo = (ManagementObject)managementObject;
-            var methodParamsObject = mo.GetMethodParameters(methodName);
-            foreach (var pair in methodParams)
-                methodParamsObject[pair.Key] = pair.Value;
+                var mo = (ManagementObject)managementObject;
+                var methodParamsObject = mo.GetMethodParameters(methodName);
+                foreach (var pair in methodParams)
+                    methodParamsObject[pair.Key] = pair.Value;
 
-            var resultProperties = mo.InvokeMethod(methodName, methodParamsObject, new InvokeMethodOptions());
-            var result = converter(resultProperties.Properties);
-            return result;
+                var options = new InvokeMethodOptions { Timeout = TimeSpan.FromSeconds(30) };
+                var resultProperties = mo.InvokeMethod(methodName, methodParamsObject, options);
+                var result = converter(resultProperties.Properties);
+                return result;
+            }).ConfigureAwait(false);
         }
         catch (ManagementException ex)
         {

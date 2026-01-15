@@ -3697,6 +3697,24 @@ namespace LenovoLegionToolkit.WPF.Resources {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Log.
+        /// </summary>
+        public static string Log {
+            get {
+                return ResourceManager.GetString("Log", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Hex.
+        /// </summary>
+        public static string Hex {
+            get {
+                return ResourceManager.GetString("Hex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Turn backlight on or off..
         /// </summary>
         public static string OneLevelWhiteKeyboardBacklightAutomationStepControl_Message {
@@ -4838,7 +4856,16 @@ namespace LenovoLegionToolkit.WPF.Resources {
                 return ResourceManager.GetString("SensorsControl_CoreClock_Title", resourceCulture);
             }
         }
-        
+
+        /// <summary>
+        ///   Looks up a localized string similar to System Memory.
+        /// </summary>
+        public static string SensorsControl_MemoryUsage_Title {
+            get {
+                return ResourceManager.GetString("SensorsControl_MemoryUsage_Title", resourceCulture);
+            }
+        }
+
         /// <summary>
         ///   Looks up a localized string similar to CPU.
         /// </summary>
@@ -4872,6 +4899,15 @@ namespace LenovoLegionToolkit.WPF.Resources {
         public static string SensorsControl_Maximum {
             get {
                 return ResourceManager.GetString("SensorsControl_Maximum", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to —.
+        /// </summary>
+        public static string SensorsControl_NotAvailable {
+            get {
+                return ResourceManager.GetString("SensorsControl_NotAvailable", resourceCulture);
             }
         }
         

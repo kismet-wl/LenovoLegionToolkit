@@ -334,6 +334,18 @@
   <data name="BatteryPage_DischargeRate_Title" xml:space="preserve">
     <value>釋放功率</value>
   </data>
+  <data name="BatteryPage_MinDischargeRate_Message" xml:space="preserve">
+    <value>電池充電（+）或釋放（-）的最小功率。</value>
+  </data>
+  <data name="BatteryPage_MinDischargeRate_Title" xml:space="preserve">
+    <value>最小釋放功率</value>
+  </data>
+  <data name="BatteryPage_MaxDischargeRate_Message" xml:space="preserve">
+    <value>電池充電（+）或釋放（-）的最大功率。</value>
+  </data>
+  <data name="BatteryPage_MaxDischargeRate_Title" xml:space="preserve">
+    <value>最大釋放功率</value>
+  </data>
   <data name="BatteryPage_EstimatedBatteryLifeRemaining" xml:space="preserve">
     <value>預估剩餘時間：{0}</value>
   </data>
@@ -360,6 +372,12 @@
   </data>
   <data name="BatteryPage_ManufactureDate_Title" xml:space="preserve">
     <value>製造日期</value>
+  </data>
+  <data name="BatteryPage_BatteryHealth_Message" xml:space="preserve">
+    <value>電池的當前健康狀況，基於設計容量和實際容量。</value>
+  </data>
+  <data name="BatteryPage_BatteryHealth_Title" xml:space="preserve">
+    <value>電池健康</value>
   </data>
   <data name="BatteryPage_OnBatterySince_Message" xml:space="preserve">
     <value>自筆記型電腦中斷連接電源供應器以來的時間。
@@ -886,7 +904,13 @@
     <value>鎖定觸控板</value>
   </data>
   <data name="OK" xml:space="preserve">
-    <value>確認</value>
+    <value>確定</value>
+  </data>
+  <data name="Log" xml:space="preserve">
+    <value>日誌</value>
+  </data>
+  <data name="Hex" xml:space="preserve">
+    <value>十六進制</value>
   </data>
   <data name="Open" xml:space="preserve">
     <value>開啟</value>
@@ -1666,6 +1690,12 @@
   <data name="StatusTrayPopup_DischargeRate" xml:space="preserve">
     <value>釋放功率</value>
   </data>
+  <data name="StatusTrayPopup_MinDischargeRate" xml:space="preserve">
+    <value>最小充放電功率</value>
+  </data>
+  <data name="StatusTrayPopup_MaxDischargeRate" xml:space="preserve">
+    <value>最大充放電功率</value>
+  </data>
   <data name="StatusTrayPopup_UpdateAvailable" xml:space="preserve">
     <value>已有可供使用的更新！</value>
   </data>
@@ -1771,6 +1801,9 @@
   <data name="SensorsControl_Maximum" xml:space="preserve">
     <value>最大：{0}</value>
   </data>
+  <data name="SensorsControl_NotAvailable" xml:space="preserve">
+    <value>—</value>
+  </data>
   <data name="SensorsControl_CPU_Title" xml:space="preserve">
     <value>CPU</value>
   </data>
@@ -1779,6 +1812,9 @@
   </data>
   <data name="SensorsControl_CoreClock_Title" xml:space="preserve">
     <value>核心時脈</value>
+  </data>
+  <data name="SensorsControl_MemoryUsage_Title" xml:space="preserve">
+    <value>系統記憶體</value>
   </data>
   <data name="SensorsControl_Temperature_Title" xml:space="preserve">
     <value>溫度</value>

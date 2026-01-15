@@ -336,6 +336,18 @@
   <data name="BatteryPage_DischargeRate_Title" xml:space="preserve">
     <value>电池充放电功率</value>
   </data>
+  <data name="BatteryPage_MinDischargeRate_Message" xml:space="preserve">
+    <value>电池充电（+）或放电（-）的最小功率。</value>
+  </data>
+  <data name="BatteryPage_MinDischargeRate_Title" xml:space="preserve">
+    <value>最小充放电功率</value>
+  </data>
+  <data name="BatteryPage_MaxDischargeRate_Message" xml:space="preserve">
+    <value>电池充电（+）或放电（-）的最大功率。</value>
+  </data>
+  <data name="BatteryPage_MaxDischargeRate_Title" xml:space="preserve">
+    <value>最大充放电功率</value>
+  </data>
   <data name="BatteryPage_EstimatedBatteryLifeRemaining" xml:space="preserve">
     <value>预估剩余时间：{0}</value>
   </data>
@@ -362,6 +374,12 @@
   </data>
   <data name="BatteryPage_ManufactureDate_Title" xml:space="preserve">
     <value>生产日期</value>
+  </data>
+  <data name="BatteryPage_BatteryHealth_Message" xml:space="preserve">
+    <value>电池的当前健康状况，基于设计容量和实际容量。</value>
+  </data>
+  <data name="BatteryPage_BatteryHealth_Title" xml:space="preserve">
+    <value>电池健康</value>
   </data>
   <data name="BatteryPage_OnBatterySince_Message" xml:space="preserve">
     <value>笔记本断开电源适配器的时间。
@@ -893,6 +911,12 @@
   </data>
   <data name="OK" xml:space="preserve">
     <value>是</value>
+  </data>
+  <data name="Log" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="Hex" xml:space="preserve">
+    <value>十六进制</value>
   </data>
   <data name="Open" xml:space="preserve">
     <value>打开</value>
@@ -1675,6 +1699,12 @@
   <data name="StatusTrayPopup_DischargeRate" xml:space="preserve">
     <value>电池充放电功率</value>
   </data>
+  <data name="StatusTrayPopup_MinDischargeRate" xml:space="preserve">
+    <value>最小充放电功率</value>
+  </data>
+  <data name="StatusTrayPopup_MaxDischargeRate" xml:space="preserve">
+    <value>最大充放电功率</value>
+  </data>
   <data name="StatusTrayPopup_UpdateAvailable" xml:space="preserve">
     <value>新版本可用！</value>
   </data>
@@ -1780,6 +1810,9 @@
   <data name="SensorsControl_Maximum" xml:space="preserve">
     <value>最大：{0}</value>
   </data>
+  <data name="SensorsControl_NotAvailable" xml:space="preserve">
+    <value>—</value>
+  </data>
   <data name="SensorsControl_CPU_Title" xml:space="preserve">
     <value>CPU</value>
   </data>
@@ -1788,6 +1821,9 @@
   </data>
   <data name="SensorsControl_CoreClock_Title" xml:space="preserve">
     <value>核心频率</value>
+  </data>
+  <data name="SensorsControl_MemoryUsage_Title" xml:space="preserve">
+    <value>系统内存</value>
   </data>
   <data name="SensorsControl_Temperature_Title" xml:space="preserve">
     <value>温度</value>

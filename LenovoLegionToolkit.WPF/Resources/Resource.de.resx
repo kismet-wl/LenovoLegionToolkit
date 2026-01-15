@@ -1667,6 +1667,12 @@ Diese Einstellung wird nur wirksam, wenn der benutzerdefinierte Modus aktiviert 
   <data name="StatusTrayPopup_DischargeRate" xml:space="preserve">
     <value>Entladungsrate</value>
   </data>
+  <data name="StatusTrayPopup_MinDischargeRate" xml:space="preserve">
+    <value>Minimale Entladungsrate</value>
+  </data>
+  <data name="StatusTrayPopup_MaxDischargeRate" xml:space="preserve">
+    <value>Maximale Entladungsrate</value>
+  </data>
   <data name="StatusTrayPopup_UpdateAvailable" xml:space="preserve">
     <value>Update verfügbar!</value>
   </data>

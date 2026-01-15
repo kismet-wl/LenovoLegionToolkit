@@ -2,6 +2,7 @@
 using LenovoLegionToolkit.Lib.System;
 #endif
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
@@ -125,20 +126,29 @@ public partial class App
 
         AutomationPage.EnableHybridModeAutomation = flags.EnableHybridModeAutomation;
 
-        await LogSoftwareStatusAsync();
-        await InitPowerModeFeatureAsync();
-        await InitBatteryFeatureAsync();
-        await InitRgbKeyboardControllerAsync();
-        await InitSpectrumKeyboardControllerAsync();
-        await InitGpuOverclockControllerAsync();
-        await InitHybridModeAsync();
-        await InitAutomationProcessorAsync();
+        // 并行执行初始化任务，提升启动速度
+        var initializationTasks = new List<Task>
+        {
+            LogSoftwareStatusAsync(),
+            InitPowerModeFeatureAsync(),
+            InitBatteryFeatureAsync(),
+            InitRgbKeyboardControllerAsync(),
+            InitSpectrumKeyboardControllerAsync(),
+            InitGpuOverclockControllerAsync(),
+            InitHybridModeAsync(),
+            InitAutomationProcessorAsync()
+        };
+
+        // InitMacroController 是同步方法，单独调用
         InitMacroController();
 
-        await IoCContainer.Resolve<AIController>().StartIfNeededAsync();
-        await IoCContainer.Resolve<HWiNFOIntegration>().StartStopIfNeededAsync();
-        await IoCContainer.Resolve<IpcServer>().StartStopIfNeededAsync();
-        await IoCContainer.Resolve<BatteryDischargeRateMonitorService>().StartStopIfNeededAsync();
+        // 等待所有异步初始化任务完成
+        await Task.WhenAll(initializationTasks).ConfigureAwait(true);  // 改为 true，确保在 UI 线程上继续
+
+        await IoCContainer.Resolve<AIController>().StartIfNeededAsync().ConfigureAwait(true);
+        await IoCContainer.Resolve<HWiNFOIntegration>().StartStopIfNeededAsync().ConfigureAwait(true);
+        await IoCContainer.Resolve<IpcServer>().StartStopIfNeededAsync().ConfigureAwait(true);
+        await IoCContainer.Resolve<BatteryDischargeRateMonitorService>().StartStopIfNeededAsync().ConfigureAwait(true);
 
 #if !DEBUG
         Autorun.Validate();

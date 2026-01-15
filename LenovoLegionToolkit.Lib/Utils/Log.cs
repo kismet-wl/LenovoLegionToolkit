@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 
 namespace LenovoLegionToolkit.Lib.Utils;
 
@@ -22,6 +23,10 @@ public class Log
     private readonly object _lock = new();
     private readonly string _folderPath;
     private readonly string _logPath;
+    private readonly List<string> _buffer = new();
+    private readonly Timer _flushTimer;
+    private const int BufferSize = 100;
+    private const int FlushIntervalMs = 5000;
 
     public bool IsTraceEnabled { get; set; }
 
@@ -32,6 +37,9 @@ public class Log
         _folderPath = Path.Combine(Folders.AppData, "log");
         Directory.CreateDirectory(_folderPath);
         _logPath = Path.Combine(_folderPath, $"log_{DateTime.UtcNow:yyyy_MM_dd_HH_mm_ss}.txt");
+        
+        // 设置定时器，定期刷新缓冲区
+        _flushTimer = new Timer(FlushBuffer, null, FlushIntervalMs, FlushIntervalMs);
     }
 
     public void ErrorReport(string header, Exception ex)
@@ -73,7 +81,33 @@ public class Log
                 Debug.WriteLine(line);
 #endif
 
-            File.AppendAllLines(path, lines);
+            // 添加到缓冲区
+            _buffer.AddRange(lines);
+
+            // 如果缓冲区达到阈值，立即刷新
+            if (_buffer.Count >= BufferSize)
+            {
+                FlushBuffer();
+            }
+        }
+    }
+
+    private void FlushBuffer(object? state = null)
+    {
+        lock (_lock)
+        {
+            if (_buffer.Count == 0)
+                return;
+
+            try
+            {
+                File.AppendAllLines(_logPath, _buffer);
+                _buffer.Clear();
+            }
+            catch
+            {
+                // 忽略日志写入错误，避免影响主程序
+            }
         }
     }
 

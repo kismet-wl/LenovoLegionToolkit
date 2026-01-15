@@ -216,7 +216,8 @@ public static partial class Compatibility
     {
         try
         {
-            var powerModes = new List<PowerModeState>();
+            // 预分配容量，最多 4 个电源模式
+            var powerModes = new List<PowerModeState>(4);
 
             var value = await WMI.LenovoOtherMethod.GetFeatureValueAsync(CapabilityID.SupportedPowerModes).ConfigureAwait(false);
 
@@ -235,7 +236,8 @@ public static partial class Compatibility
 
         try
         {
-            var powerModes = new List<PowerModeState>();
+            // 预分配容量，最多 4 个电源模式
+            var powerModes = new List<PowerModeState>(4);
 
             var result = await WMI.LenovoOtherMethod.GetSupportThermalModeAsync().ConfigureAwait(false);
 

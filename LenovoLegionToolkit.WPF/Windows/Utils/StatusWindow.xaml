@@ -8,9 +8,9 @@
     xmlns:system="clr-namespace:System;assembly=System.Runtime"
     xmlns:utils="clr-namespace:LenovoLegionToolkit.WPF.Utils"
     xmlns:wpfui="http://schemas.lepo.co/wpfui/2022/xaml"
-    Width="300"
+    Width="240"
     Height="100"
-    MinWidth="300"
+    MinWidth="240"
     MinHeight="100"
     FlowDirection="{x:Static utils:LocalizationHelper.Direction}"
     mc:Ignorable="d">

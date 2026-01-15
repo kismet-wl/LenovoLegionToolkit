@@ -669,9 +669,11 @@ public readonly struct SensorData(
     int temperature,
     int maxTemperature,
     int fanSpeed,
-    int maxFanSpeed)
+    int maxFanSpeed,
+    int memoryUsage,
+    int maxMemoryUsage)
 {
-    public static readonly SensorData Empty = new(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
+    public static readonly SensorData Empty = new(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1);
 
     public int Utilization { get; } = utilization;
     public int MaxUtilization { get; } = maxUtilization;
@@ -683,6 +685,8 @@ public readonly struct SensorData(
     public int MaxTemperature { get; } = maxTemperature;
     public int FanSpeed { get; } = fanSpeed;
     public int MaxFanSpeed { get; } = maxFanSpeed;
+    public int MemoryUsage { get; } = memoryUsage;
+    public int MaxMemoryUsage { get; } = maxMemoryUsage;
 
     public override string ToString() =>
         $"{nameof(Utilization)}: {Utilization}," +
@@ -694,7 +698,9 @@ public readonly struct SensorData(
         $" {nameof(Temperature)}: {Temperature}," +
         $" {nameof(MaxTemperature)}: {MaxTemperature}," +
         $" {nameof(FanSpeed)}: {FanSpeed}," +
-        $" {nameof(MaxFanSpeed)}: {MaxFanSpeed}";
+        $" {nameof(MaxFanSpeed)}: {MaxFanSpeed}," +
+        $" {nameof(MemoryUsage)}: {MemoryUsage}," +
+        $" {nameof(MaxMemoryUsage)}: {MaxMemoryUsage}";
 }
 
 public readonly struct SensorsData(SensorData cpu, SensorData gpu)

@@ -484,6 +484,7 @@ public class SpectrumKeyboardBacklightController
             var width = keyMap.Width;
             var height = keyMap.Height;
             var colorBuffer = new RGBColor[width, height];
+            var previousBuffer = new RGBColor[width, height];
 
             SetFeature(handle, new LENOVO_SPECTRUM_AURORA_START_STOP_REQUEST(true, (byte)profile));
 
@@ -506,10 +507,12 @@ public class SpectrumKeyboardBacklightController
                 token.ThrowIfCancellationRequested();
 
                 var items = new List<LENOVO_SPECTRUM_AURORA_ITEM>(width * height);
+                var hasChanges = false;
 
                 var avgR = 0;
                 var avgG = 0;
                 var avgB = 0;
+                var changedKeyCount = 0;
 
                 for (var x = 0; x < width; x++)
                 {
@@ -520,12 +523,35 @@ public class SpectrumKeyboardBacklightController
                             continue;
 
                         var color = colorBuffer[x, y];
-                        avgR += color.R;
-                        avgG += color.G;
-                        avgB += color.B;
-                        items.Add(new(keyCode, new(color.R, color.G, color.B)));
+                        var previous = previousBuffer[x, y];
+
+                        // 检测颜色变化（阈值 10 以减少噪声）
+                        var colorChanged = Math.Abs(color.R - previous.R) > 10 ||
+                                         Math.Abs(color.G - previous.G) > 10 ||
+                                         Math.Abs(color.B - previous.B) > 10;
+
+                        if (colorChanged)
+                        {
+                            hasChanges = true;
+                            changedKeyCount++;
+                            avgR += color.R;
+                            avgG += color.G;
+                            avgB += color.B;
+                            items.Add(new(keyCode, new(color.R, color.G, color.B)));
+                        }
+                        else
+                        {
+                            // 颜色未变化，使用之前的值
+                            avgR += previous.R;
+                            avgG += previous.G;
+                            avgB += previous.B;
+                            items.Add(new(keyCode, new(previous.R, previous.G, previous.B)));
+                        }
                     }
                 }
+
+                // 更新缓冲区
+                Array.Copy(colorBuffer, previousBuffer, colorBuffer.Length);
 
                 avgR /= items.Count;
                 avgG /= items.Count;
@@ -542,7 +568,16 @@ public class SpectrumKeyboardBacklightController
 
                 token.ThrowIfCancellationRequested();
 
-                SetFeature(handle, new LENOVO_SPECTRUM_AURORA_SEND_BITMAP_REQUEST([.. items]).ToBytes());
+                // 只有当有变化时才发送数据，减少 USB 数据传输
+                if (hasChanges || items.Count == 0)
+                {
+                    SetFeature(handle, new LENOVO_SPECTRUM_AURORA_SEND_BITMAP_REQUEST([.. items]).ToBytes());
+                }
+
+                if (Log.Instance.IsTraceEnabled && hasChanges)
+                {
+                    Log.Instance.Trace($"Aurora refresh: {changedKeyCount}/{items.Count} keys changed");
+                }
 
                 await delay.ConfigureAwait(false);
             }

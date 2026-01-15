@@ -111,7 +111,8 @@ public static class Battery
 
             var lastRebootTime = DateTime.Now - TimeSpan.FromMilliseconds(Environment.TickCount);
 
-            var logs = new List<(DateTime Date, bool IsACOnline)>();
+            // 预分配容量，减少内存分配
+            var logs = new List<(DateTime Date, bool IsACOnline)>(100);
 
             var query = new EventLogQuery("System", PathType.LogName, "*[System[EventID=105]]");
             using var logReader = new EventLogReader(query);
@@ -161,7 +162,7 @@ public static class Battery
         return sps;
     }
 
-    private static uint GetBatteryTag()
+    public static uint GetBatteryTag()
     {
         var result = PInvokeExtensions.DeviceIoControl(Devices.GetBattery(),
             PInvoke.IOCTL_BATTERY_QUERY_TAG,
@@ -192,7 +193,7 @@ public static class Battery
         return bi;
     }
 
-    private static BATTERY_STATUS GetBatteryStatus(uint batteryTag)
+    public static BATTERY_STATUS GetBatteryStatus(uint batteryTag)
     {
         var waitStatus = new BATTERY_WAIT_STATUS
         {
@@ -208,6 +209,8 @@ public static class Battery
 
         return s;
     }
+
+
 
     private static LENOVO_BATTERY_INFORMATION? FindLenovoBatteryInformation()
     {

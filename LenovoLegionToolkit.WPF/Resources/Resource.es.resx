@@ -1671,6 +1671,12 @@ Esta configuración sólo tiene efecto si el modo personalizado está activado.<
   <data name="StatusTrayPopup_DischargeRate" xml:space="preserve">
     <value>Índice de descarga</value>
   </data>
+  <data name="StatusTrayPopup_MinDischargeRate" xml:space="preserve">
+    <value>Índice de descarga mínimo</value>
+  </data>
+  <data name="StatusTrayPopup_MaxDischargeRate" xml:space="preserve">
+    <value>Índice de descarga máximo</value>
+  </data>
   <data name="StatusTrayPopup_UpdateAvailable" xml:space="preserve">
     <value>¡Actualización disponible!</value>
   </data>

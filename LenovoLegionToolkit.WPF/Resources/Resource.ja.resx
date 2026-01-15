@@ -1576,6 +1576,12 @@ PayPal で寄付するには、下の PayPal ロゴをクリックするかQR �
   <data name="StatusTrayPopup_DischargeRate" xml:space="preserve">
     <value>出力量</value>
   </data>
+  <data name="StatusTrayPopup_MinDischargeRate" xml:space="preserve">
+    <value>最小出力量</value>
+  </data>
+  <data name="StatusTrayPopup_MaxDischargeRate" xml:space="preserve">
+    <value>最大出力量</value>
+  </data>
   <data name="StatusTrayPopup_UpdateAvailable" xml:space="preserve">
     <value>更新があります！</value>
   </data>

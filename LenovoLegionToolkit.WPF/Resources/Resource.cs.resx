@@ -1597,6 +1597,12 @@ Toto nastavení se aplikuje jen když je zapnutý vlastní režim.</value>
   <data name="StatusTrayPopup_DischargeRate" xml:space="preserve">
     <value>Rychlost vybíjení</value>
   </data>
+  <data name="StatusTrayPopup_MinDischargeRate" xml:space="preserve">
+    <value>Minimální rychlost vybíjení</value>
+  </data>
+  <data name="StatusTrayPopup_MaxDischargeRate" xml:space="preserve">
+    <value>Maximální rychlost vybíjení</value>
+  </data>
   <data name="StatusTrayPopup_UpdateAvailable" xml:space="preserve">
     <value>Aktualizace k dispozici!</value>
   </data>

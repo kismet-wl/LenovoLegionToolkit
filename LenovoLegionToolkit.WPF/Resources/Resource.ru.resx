@@ -1668,6 +1668,12 @@
   <data name="StatusTrayPopup_DischargeRate" xml:space="preserve">
     <value>Мгновенная мощность при разрядке</value>
   </data>
+  <data name="StatusTrayPopup_MinDischargeRate" xml:space="preserve">
+    <value>Минимальная мощность при разрядке</value>
+  </data>
+  <data name="StatusTrayPopup_MaxDischargeRate" xml:space="preserve">
+    <value>Максимальная мощность при разрядке</value>
+  </data>
   <data name="StatusTrayPopup_UpdateAvailable" xml:space="preserve">
     <value>Доступно обновление!</value>
   </data>

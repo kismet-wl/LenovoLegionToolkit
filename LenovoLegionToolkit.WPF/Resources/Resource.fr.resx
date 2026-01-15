@@ -1665,6 +1665,12 @@ Ce paramètre ne prend effet que lorsque le mode personnalisé est activé.</val
   <data name="StatusTrayPopup_DischargeRate" xml:space="preserve">
     <value>Vitesse de charge/décharge</value>
   </data>
+  <data name="StatusTrayPopup_MinDischargeRate" xml:space="preserve">
+    <value>Vitesse de charge/décharge minimale</value>
+  </data>
+  <data name="StatusTrayPopup_MaxDischargeRate" xml:space="preserve">
+    <value>Vitesse de charge/décharge maximale</value>
+  </data>
   <data name="StatusTrayPopup_UpdateAvailable" xml:space="preserve">
     <value>Mise à jour disponible !</value>
   </data>

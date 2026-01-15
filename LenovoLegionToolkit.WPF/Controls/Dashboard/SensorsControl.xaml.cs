@@ -128,6 +128,8 @@ public partial class SensorsControl
             $"{data.CPU.Utilization}%");
         UpdateValue(_cpuCoreClockBar, _cpuCoreClockLabel, data.CPU.MaxCoreClock, data.CPU.CoreClock,
             $"{data.CPU.CoreClock / 1000.0:0.0} {Resource.GHz}", $"{data.CPU.MaxCoreClock / 1000.0:0.0} {Resource.GHz}");
+        UpdateValue(_cpuMemoryUsageBar, _cpuMemoryUsageLabel, data.CPU.MaxMemoryUsage, data.CPU.MemoryUsage,
+            $"{data.CPU.MemoryUsage}%");
         UpdateValue(_cpuTemperatureBar, _cpuTemperatureLabel, data.CPU.MaxTemperature, data.CPU.Temperature,
             GetTemperatureText(data.CPU.Temperature), GetTemperatureText(data.CPU.MaxTemperature));
         UpdateValue(_cpuFanSpeedBar, _cpuFanSpeedLabel, data.CPU.MaxFanSpeed, data.CPU.FanSpeed,
