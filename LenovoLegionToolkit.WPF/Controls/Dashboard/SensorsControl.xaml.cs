@@ -25,6 +25,7 @@ public partial class SensorsControl
     private readonly DashboardSettings _dashboardSettings = IoCContainer.Resolve<DashboardSettings>();
 
     private CancellationTokenSource? _cts;
+    private CancellationTokenSource? _monitorStateCts;
     private Task? _refreshTask;
 
     public SensorsControl()
@@ -33,6 +34,8 @@ public partial class SensorsControl
         InitializeContextMenu();
 
         IsVisibleChanged += SensorsControl_IsVisibleChanged;
+        _windowsMessageListener.MonitorStateChanged += MonitorStateChanged;
+        Unloaded += SensorsControl_Unloaded;
     }
 
     private void InitializeContextMenu()
@@ -84,6 +87,7 @@ public partial class SensorsControl
         _cts = new CancellationTokenSource();
 
         var token = _cts.Token;
+        var monitorStateToken = _monitorStateCts?.Token ?? CancellationToken.None;
 
         _refreshTask = Task.Run(async () =>
         {
@@ -101,7 +105,7 @@ public partial class SensorsControl
 
             await _controller.PrepareAsync();
 
-            while (!token.IsCancellationRequested)
+            while (!token.IsCancellationRequested && !monitorStateToken.IsCancellationRequested)
             {
                 try
                 {
@@ -110,10 +114,6 @@ public partial class SensorsControl
                     {
                         var data = await _controller.GetDataAsync();
                         Dispatcher.Invoke(() => UpdateValues(data));
-                    }
-                    else if (Log.Instance.IsTraceEnabled)
-                    {
-                        Log.Instance.Trace($"Sensors refresh skipped (MonitorOn={_windowsMessageListener.IsMonitorOn}, IsVisible={IsVisible})");
                     }
                     
                     await Task.Delay(TimeSpan.FromSeconds(_dashboardSettings.Store.SensorsRefreshIntervalSeconds), token);
@@ -190,5 +190,30 @@ public partial class SensorsControl
             label.ToolTip = toolTipText is null ? null : string.Format(Resource.SensorsControl_Maximum, toolTipText);
             label.Tag = value;
         }
+    }
+
+    private void MonitorStateChanged(object? sender, bool isMonitorOn)
+    {
+        if (IsVisible)
+        {
+            if (isMonitorOn)
+            {
+                // 显示器开启，恢复刷新
+                Refresh();
+            }
+            else
+            {
+                // 显示器关闭，暂停刷新
+                _monitorStateCts?.Cancel();
+                _monitorStateCts = new();
+            }
+        }
+    }
+
+    private void SensorsControl_Unloaded(object? sender, RoutedEventArgs e)
+    {
+        _windowsMessageListener.MonitorStateChanged -= MonitorStateChanged;
+        _monitorStateCts?.Cancel();
+        _monitorStateCts = null;
     }
 }

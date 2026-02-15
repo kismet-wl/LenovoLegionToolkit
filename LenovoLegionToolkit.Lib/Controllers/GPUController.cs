@@ -20,6 +20,7 @@ public class GPUController
 
     private Task? _refreshTask;
     private CancellationTokenSource? _refreshCancellationTokenSource;
+    private CancellationTokenSource? _monitorStateCancellationTokenSource;
 
     private GPUState _state = GPUState.Unknown;
     private List<Process> _processes = [];
@@ -73,6 +74,7 @@ public class GPUController
         if (Log.Instance.IsTraceEnabled)
             Log.Instance.Trace($"Starting... [delay={delay}, interval={interval}]");
 
+        _windowsMessageListener.MonitorStateChanged += MonitorStateChanged;
         _refreshCancellationTokenSource = new CancellationTokenSource();
         var token = _refreshCancellationTokenSource.Token;
         _refreshTask = Task.Run(() => RefreshLoopAsync(delay, interval, token), token);
@@ -107,6 +109,10 @@ public class GPUController
 
         _refreshCancellationTokenSource = null;
         _refreshTask = null;
+
+        _windowsMessageListener.MonitorStateChanged -= MonitorStateChanged;
+        _monitorStateCancellationTokenSource?.Cancel();
+        _monitorStateCancellationTokenSource = null;
 
         if (Log.Instance.IsTraceEnabled)
             Log.Instance.Trace($"Stopped");
@@ -197,14 +203,26 @@ public class GPUController
 
                         Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
                     }
-                    else if (Log.Instance.IsTraceEnabled)
-                    {
-                        Log.Instance.Trace($"GPU refresh skipped (MonitorOff)");
-                    }
                 }
 
-                if (interval > 0)
-                    await Task.Delay(interval, token).ConfigureAwait(false);
+if (interval > 0)
+                {
+                    var delayTask = Task.Delay(interval, token);
+                    if (_monitorStateCancellationTokenSource?.IsCancellationRequested == false)
+                    {
+                        // 等待延迟或显示器状态变化
+                        var monitorStateTask = Task.Run(async () =>
+                        {
+                            _monitorStateCancellationTokenSource.Token.WaitHandle.WaitOne();
+                        }, _monitorStateCancellationTokenSource.Token);
+                        
+                        await Task.WhenAny(delayTask, monitorStateTask).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await delayTask.ConfigureAwait(false);
+                    }
+                }
                 else
                     break;
             }
@@ -307,6 +325,26 @@ public class GPUController
 
             if (Log.Instance.IsTraceEnabled)
                 Log.Instance.Trace($"Inactive [state={_state}, processes.Count={_processes.Count}, gpuInstanceId={_gpuInstanceId}]");
+        }
+    }
+
+    private void MonitorStateChanged(object? sender, bool isMonitorOn)
+    {
+        if (!IsStarted)
+            return;
+
+        if (isMonitorOn)
+        {
+            // 显示器开启，如果被暂停则恢复
+            if (_monitorStateCancellationTokenSource?.IsCancellationRequested == true)
+            {
+                _monitorStateCancellationTokenSource = new();
+            }
+        }
+        else
+        {
+            // 显示器关闭，暂停刷新
+            _monitorStateCancellationTokenSource?.Cancel();
         }
     }
 }

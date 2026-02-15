@@ -50,6 +50,7 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
     public bool IsLidOpen { get; private set; }
 
     public event EventHandler<ChangedEventArgs>? Changed;
+    public event EventHandler<bool>? MonitorStateChanged;
 
     public NativeWindowsMessageListener(IMainThreadDispatcher mainThreadDispatcher, DGPUNotify dgpuNotify, SmartFnLockController smartFnLockController, PowerModeFeature powerModeFeature)
     {
@@ -276,6 +277,7 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
         IsMonitorOn = true;
         _isMonitorOnTaskCompletionSource.TrySetResult();
 
+        MonitorStateChanged?.Invoke(this, true);
         RaiseChanged(NativeWindowsMessage.MonitorOn);
     }
 
@@ -284,6 +286,7 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
         IsMonitorOn = false;
         _isMonitorOnTaskCompletionSource.TrySetResult();
 
+        MonitorStateChanged?.Invoke(this, false);
         RaiseChanged(NativeWindowsMessage.MonitorOff);
     }
 
