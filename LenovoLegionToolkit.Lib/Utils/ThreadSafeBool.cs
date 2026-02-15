@@ -9,12 +9,6 @@ public class ThreadSafeBool
     public bool Value
     {
         get => Interlocked.CompareExchange(ref _threadSafeBoolBackValue, 1, 1) == 1;
-        set
-        {
-            if (value)
-                Interlocked.CompareExchange(ref _threadSafeBoolBackValue, 1, 0);
-            else
-                Interlocked.CompareExchange(ref _threadSafeBoolBackValue, 0, 1);
-        }
+        set => Interlocked.Exchange(ref _threadSafeBoolBackValue, value ? 1 : 0);
     }
 }

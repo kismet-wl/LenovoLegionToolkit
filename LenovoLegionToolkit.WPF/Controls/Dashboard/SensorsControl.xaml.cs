@@ -7,6 +7,7 @@ using System.Windows.Controls.Primitives;
 using Humanizer;
 using LenovoLegionToolkit.Lib;
 using LenovoLegionToolkit.Lib.Controllers.Sensors;
+using LenovoLegionToolkit.Lib.Listeners;
 using LenovoLegionToolkit.Lib.Settings;
 using LenovoLegionToolkit.Lib.Utils;
 using LenovoLegionToolkit.WPF.Resources;
@@ -19,6 +20,7 @@ namespace LenovoLegionToolkit.WPF.Controls.Dashboard;
 public partial class SensorsControl
 {
     private readonly ISensorsController _controller = IoCContainer.Resolve<ISensorsController>();
+    private readonly NativeWindowsMessageListener _windowsMessageListener = IoCContainer.Resolve<NativeWindowsMessageListener>();
     private readonly ApplicationSettings _applicationSettings = IoCContainer.Resolve<ApplicationSettings>();
     private readonly DashboardSettings _dashboardSettings = IoCContainer.Resolve<DashboardSettings>();
 
@@ -103,8 +105,17 @@ public partial class SensorsControl
             {
                 try
                 {
-                    var data = await _controller.GetDataAsync();
-                    Dispatcher.Invoke(() => UpdateValues(data));
+                    // 只在显示器开启且页面可见时刷新
+                    if (_windowsMessageListener.IsMonitorOn && IsVisible)
+                    {
+                        var data = await _controller.GetDataAsync();
+                        Dispatcher.Invoke(() => UpdateValues(data));
+                    }
+                    else if (Log.Instance.IsTraceEnabled)
+                    {
+                        Log.Instance.Trace($"Sensors refresh skipped (MonitorOn={_windowsMessageListener.IsMonitorOn}, IsVisible={IsVisible})");
+                    }
+                    
                     await Task.Delay(TimeSpan.FromSeconds(_dashboardSettings.Store.SensorsRefreshIntervalSeconds), token);
                 }
                 catch (OperationCanceledException) { }

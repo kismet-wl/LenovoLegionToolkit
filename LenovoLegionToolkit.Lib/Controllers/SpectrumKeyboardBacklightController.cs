@@ -70,24 +70,31 @@ public class SpectrumKeyboardBacklightController
 
     private async void Listener_Changed(object? sender, SpecialKeyListener.ChangedEventArgs e)
     {
-        if (!await IsSupportedAsync().ConfigureAwait(false))
-            return;
-
-        if (await _vantageDisabler.GetStatusAsync().ConfigureAwait(false) == SoftwareStatus.Enabled)
-            return;
-
-        switch (e.SpecialKey)
+        try
         {
-            case SpecialKey.SpectrumPreset1
-                or SpecialKey.SpectrumPreset2
-                or SpecialKey.SpectrumPreset3
-                or SpecialKey.SpectrumPreset4
-                or SpecialKey.SpectrumPreset5
-                or SpecialKey.SpectrumPreset6:
-                {
-                    await StartAuroraIfNeededAsync().ConfigureAwait(false);
-                    break;
-                }
+            if (!await IsSupportedAsync().ConfigureAwait(false))
+                return;
+
+            if (await _vantageDisabler.GetStatusAsync().ConfigureAwait(false) == SoftwareStatus.Enabled)
+                return;
+
+            switch (e.SpecialKey)
+            {
+                case SpecialKey.SpectrumPreset1
+                    or SpecialKey.SpectrumPreset2
+                    or SpecialKey.SpectrumPreset3
+                    or SpecialKey.SpectrumPreset4
+                    or SpecialKey.SpectrumPreset5
+                    or SpecialKey.SpectrumPreset6:
+                    {
+                        await StartAuroraIfNeededAsync().ConfigureAwait(false);
+                        break;
+                    }
+            }
+        }
+        catch (Exception ex) when (Log.Instance.IsTraceEnabled)
+        {
+            Log.Instance.Trace($"Listener_Changed failed.", ex);
         }
     }
 

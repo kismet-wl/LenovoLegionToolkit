@@ -33,6 +33,7 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
     private readonly PowerModeFeature _powerModeFeature;
 
     private readonly HOOKPROC _kbProc;
+    private readonly HOOKPROC _mouseProc;
 
     private readonly TaskCompletionSource _isMonitorOnTaskCompletionSource = new();
     private readonly TaskCompletionSource _isLidOpenTaskCompletionSource = new();
@@ -42,6 +43,8 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
     private HPOWERNOTIFY _lidSwitchStateChangeNotificationHandle;
     private HPOWERNOTIFY _powerSavingStateChangeNotificationHandle;
     private HHOOK _kbHook;
+    private HHOOK _mouseHook;
+    private bool _keepMonitorOff = false;
 
     public bool IsMonitorOn { get; private set; }
     public bool IsLidOpen { get; private set; }
@@ -56,10 +59,16 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
         _powerModeFeature = powerModeFeature;
 
         _kbProc = LowLevelKeyboardProc;
+        _mouseProc = LowLevelMouseProc;
     }
 
     public async Task TurnOffMonitorAsync()
     {
+        _keepMonitorOff = true;
+        
+        if (Log.Instance.IsTraceEnabled)
+            Log.Instance.Trace($"Keep monitor off mode enabled");
+        
         await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
         await _mainThreadDispatcher.DispatchAsync(() =>
         {
@@ -77,6 +86,7 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
         });
 
         _kbHook = PInvoke.SetWindowsHookEx(WINDOWS_HOOK_ID.WH_KEYBOARD_LL, _kbProc, HINSTANCE.Null, 0);
+        _mouseHook = PInvoke.SetWindowsHookEx(WINDOWS_HOOK_ID.WH_MOUSE_LL, _mouseProc, HINSTANCE.Null, 0);
 
         _deviceNotificationHandle = RegisterDeviceNotification(Handle);
         _consoleDisplayStateNotificationHandle = RegisterPowerNotification(PInvoke.GUID_CONSOLE_DISPLAY_STATE);
@@ -89,6 +99,7 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
     public Task StopAsync() => _mainThreadDispatcher.DispatchAsync(() =>
     {
         PInvoke.UnhookWindowsHookEx(_kbHook);
+        PInvoke.UnhookWindowsHookEx(_mouseHook);
 
         PInvoke.UnregisterDeviceNotification(_deviceNotificationHandle);
         PInvoke.UnregisterPowerSettingNotification(_consoleDisplayStateNotificationHandle);
@@ -96,6 +107,7 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
         PInvoke.UnregisterPowerSettingNotification(_powerSavingStateChangeNotificationHandle);
 
         _kbHook = default;
+        _mouseHook = default;
         _deviceNotificationHandle = default;
         _consoleDisplayStateNotificationHandle = default;
 
@@ -250,6 +262,17 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
 
     private void OnMonitorOn()
     {
+        // If keep-monitor-off mode is active, immediately re-close the monitor
+        // This happens when Windows auto-wakes the monitor after ~3 minutes
+        if (_keepMonitorOff)
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"Monitor auto-wake detected, re-closing immediately...");
+            
+            PInvoke.SendMessage(new HWND(Handle), PInvoke.WM_SYSCOMMAND, new WPARAM(PInvoke.SC_MONITORPOWER), new LPARAM(2));
+            return; // Don't set IsMonitorOn = true, don't trigger events
+        }
+        
         IsMonitorOn = true;
         _isMonitorOnTaskCompletionSource.TrySetResult();
 
@@ -333,6 +356,14 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
 
         ref var kbStruct = ref Unsafe.AsRef<KBDLLHOOKSTRUCT>((void*)lParam.Value);
 
+        // User keyboard activity - cancel keep-monitor-off mode
+        if (_keepMonitorOff && (wParam.Value == PInvoke.WM_KEYDOWN || wParam.Value == PInvoke.WM_SYSKEYDOWN))
+        {
+            _keepMonitorOff = false;
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"User keyboard activity detected, canceling keep-monitor-off mode");
+        }
+
         _smartFnLockController.OnKeyboardEvent(wParam.Value, kbStruct);
 
         if (wParam.Value != PInvoke.WM_KEYUP)
@@ -350,6 +381,30 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
             var isOn = (PInvoke.GetKeyState((int)VIRTUAL_KEY.VK_NUMLOCK) & 0x1) != 0;
             var type = isOn ? NotificationType.NumLockOn : NotificationType.NumLockOff;
             MessagingCenter.Publish(new NotificationMessage(type));
+        }
+
+        return PInvoke.CallNextHookEx(HHOOK.Null, nCode, wParam, lParam);
+    }
+
+    private unsafe LRESULT LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+    {
+        if (nCode != PInvoke.HC_ACTION)
+            return PInvoke.CallNextHookEx(HHOOK.Null, nCode, wParam, lParam);
+
+        // User mouse activity - cancel keep-monitor-off mode
+        // Only respond to actual mouse events, not just movement
+        if (_keepMonitorOff)
+        {
+            var mouseMessage = (uint)wParam.Value;
+            // Cancel on click events (left, right, middle, x button)
+            if (mouseMessage == PInvoke.WM_LBUTTONDOWN || mouseMessage == PInvoke.WM_RBUTTONDOWN ||
+                mouseMessage == PInvoke.WM_MBUTTONDOWN || mouseMessage == PInvoke.WM_XBUTTONDOWN ||
+                mouseMessage == PInvoke.WM_MOUSEWHEEL || mouseMessage == PInvoke.WM_MOUSEHWHEEL)
+            {
+                _keepMonitorOff = false;
+                if (Log.Instance.IsTraceEnabled)
+                    Log.Instance.Trace($"User mouse activity detected, canceling keep-monitor-off mode");
+            }
         }
 
         return PInvoke.CallNextHookEx(HHOOK.Null, nCode, wParam, lParam);

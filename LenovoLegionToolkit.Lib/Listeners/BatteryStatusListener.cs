@@ -1,150 +1,156 @@
 using System;
-using System.Threading;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using LenovoLegionToolkit.Lib.System;
 using LenovoLegionToolkit.Lib.Utils;
 using Windows.Win32;
+using Windows.Win32.Foundation;
 using Windows.Win32.System.Power;
+using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace LenovoLegionToolkit.Lib.Listeners;
 
 /// <summary>
-/// 电池状态监听器 - 使用 Windows API 监听电源状态变化
+/// 电池状态监听器 - 使用 Windows 电源事件 API 监听电源状态变化（事件驱动，无轮询）
 /// </summary>
-public class BatteryStatusListener : IDisposable
+public class BatteryStatusListener : NativeWindow, IListener<BatteryStatusListener.ChangedEventArgs>
 {
-    private const int WM_POWERBROADCAST = 0x0218;
-    private const int PBT_APMPOWERSTATUSCHANGE = 0x000A;
     private const int PBT_POWERSETTINGCHANGE = 0x0001;
-    
-    // 电源设置 GUID
+
+    // 电源设置 GUID - 电池百分比变化
     private static readonly Guid GUID_BATTERY_PERCENTAGE_REMAINING = new("A7AD8041-B45A-4CAE-87DA-5A7CE631B63A");
+    // 电源设置 GUID - AC/DC 电源切换
     private static readonly Guid GUID_ACDC_POWER_SOURCE = new("5D3E9A59-E9D5-4B00-A6BD-FF34FF516548");
+
+    private HPOWERNOTIFY _batteryPercentageNotificationHandle;
+    private HPOWERNOTIFY _acdcPowerSourceNotificationHandle;
+    private bool _isStarted;
+
+    public event EventHandler<ChangedEventArgs>? Changed;
     
-    private readonly object _lock = new();
-    private CancellationTokenSource? _cts;
-    private Task? _listenerTask;
-    
+    // 向后兼容：保留旧的事件名称
     public event EventHandler<BatteryStatusChangedEventArgs>? StatusChanged;
-    
+
+    public class ChangedEventArgs : EventArgs
+    {
+        public bool IsACOnline { get; set; }
+        public int BatteryPercentage { get; set; }
+        public int DischargeRate { get; set; }
+    }
+
+    // 向后兼容：使用相同的类型别名
     public class BatteryStatusChangedEventArgs : EventArgs
     {
         public bool IsACOnline { get; set; }
         public int BatteryPercentage { get; set; }
         public int DischargeRate { get; set; }
     }
-    
-    public async Task StartAsync()
+
+    public Task StartAsync() => Task.Run(() =>
     {
-        Task? listenerTask = null;
-        CancellationTokenSource? cts = null;
-        
-        lock (_lock)
+        if (_isStarted)
+            return;
+
+        CreateHandle(new CreateParams
         {
-            if (_listenerTask != null)
-                return;
-            
-            cts = new CancellationTokenSource();
-            _cts = cts;
-        }
-        
-        listenerTask = Task.Run(() => ListenForPowerChangesAsync(cts.Token));
-        
-        lock (_lock)
-        {
-            _listenerTask = listenerTask;
-        }
-        
+            Caption = "LenovoLegionToolkit_BatteryStatusListener",
+            Parent = new IntPtr(-3)
+        });
+
+        _batteryPercentageNotificationHandle = RegisterPowerSettingNotification(GUID_BATTERY_PERCENTAGE_REMAINING);
+        _acdcPowerSourceNotificationHandle = RegisterPowerSettingNotification(GUID_ACDC_POWER_SOURCE);
+
+        _isStarted = true;
+
+        // 获取初始状态
+        RefreshBatteryStatus();
+
         if (Log.Instance.IsTraceEnabled)
-            Log.Instance.Trace($"Battery status listener started.");
-    }
-    
-    public async Task StopAsync()
+            Log.Instance.Trace($"Battery status listener started (event-driven mode).");
+    });
+
+    public Task StopAsync() => Task.Run(() =>
     {
-        CancellationTokenSource? cts = null;
-        Task? listenerTask = null;
-        
-        lock (_lock)
-        {
-            cts = _cts;
-            listenerTask = _listenerTask;
-            
-            if (_cts == null)
-                return;
-            
-            _cts = null;
-            _listenerTask = null;
-        }
-        
-        if (cts != null)
-            await cts.CancelAsync().ConfigureAwait(false);
-        
-        if (listenerTask != null)
-            await listenerTask.ConfigureAwait(false);
-        
+        if (!_isStarted)
+            return;
+
+        PInvoke.UnregisterPowerSettingNotification(_batteryPercentageNotificationHandle);
+        PInvoke.UnregisterPowerSettingNotification(_acdcPowerSourceNotificationHandle);
+
+        _batteryPercentageNotificationHandle = default;
+        _acdcPowerSourceNotificationHandle = default;
+
+        ReleaseHandle();
+
+        _isStarted = false;
+
         if (Log.Instance.IsTraceEnabled)
             Log.Instance.Trace($"Battery status listener stopped.");
+    });
+
+    protected override unsafe void WndProc(ref Message m)
+    {
+        if (m.Msg == PInvoke.WM_POWERBROADCAST && m.WParam == (IntPtr)PBT_POWERSETTINGCHANGE && m.LParam != IntPtr.Zero)
+        {
+            ref var str = ref Unsafe.AsRef<POWERBROADCAST_SETTING>((void*)m.LParam);
+
+            if (str.PowerSetting == GUID_BATTERY_PERCENTAGE_REMAINING)
+            {
+                if (Log.Instance.IsTraceEnabled)
+                    Log.Instance.Trace($"Battery percentage change event received.");
+
+                RefreshBatteryStatus();
+            }
+            else if (str.PowerSetting == GUID_ACDC_POWER_SOURCE)
+            {
+                if (Log.Instance.IsTraceEnabled)
+                    Log.Instance.Trace($"AC/DC power source change event received.");
+
+                RefreshBatteryStatus();
+            }
+        }
+
+        base.WndProc(ref m);
     }
-    
-    private async Task ListenForPowerChangesAsync(CancellationToken token)
+
+    private void RefreshBatteryStatus()
     {
         try
         {
-            // 获取初始状态
             var powerStatus = PInvoke.GetSystemPowerStatus(out var sps);
             if (powerStatus)
             {
                 var batteryTag = Battery.GetBatteryTag();
                 var status = Battery.GetBatteryStatus(batteryTag);
-                
-                RaiseStatusChanged(
-                    sps.ACLineStatus == 1,
-                    (int)sps.BatteryLifePercent,
-                    status.Rate);
-            }
-            
-            // 持续监听电源状态变化
-            while (!token.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(5), token).ConfigureAwait(false);
-                
-                // 检查电源状态是否变化
-                powerStatus = PInvoke.GetSystemPowerStatus(out var currentSps);
-                if (powerStatus)
+
+                var changedArgs = new ChangedEventArgs
                 {
-                    var batteryTag = Battery.GetBatteryTag();
-                    var currentStatus = Battery.GetBatteryStatus(batteryTag);
-                    
-                    RaiseStatusChanged(
-                        currentSps.ACLineStatus == 1,
-                        (int)currentSps.BatteryLifePercent,
-                        currentStatus.Rate);
-                }
+                    IsACOnline = sps.ACLineStatus == 1,
+                    BatteryPercentage = (int)sps.BatteryLifePercent,
+                    DischargeRate = status.Rate
+                };
+
+                var statusChangedArgs = new BatteryStatusChangedEventArgs
+                {
+                    IsACOnline = sps.ACLineStatus == 1,
+                    BatteryPercentage = (int)sps.BatteryLifePercent,
+                    DischargeRate = status.Rate
+                };
+
+                Changed?.Invoke(this, changedArgs);
+                StatusChanged?.Invoke(this, statusChangedArgs);
             }
-        }
-        catch (OperationCanceledException)
-        {
-            // 正常取消
         }
         catch (Exception ex)
         {
             if (Log.Instance.IsTraceEnabled)
-                Log.Instance.Trace($"Battery status listener failed.", ex);
+                Log.Instance.Trace($"Failed to refresh battery status.", ex);
         }
     }
-    
-    private void RaiseStatusChanged(bool isACOnline, int batteryPercentage, int dischargeRate)
+
+    private unsafe HPOWERNOTIFY RegisterPowerSettingNotification(Guid guid)
     {
-        StatusChanged?.Invoke(this, new BatteryStatusChangedEventArgs
-        {
-            IsACOnline = isACOnline,
-            BatteryPercentage = batteryPercentage,
-            DischargeRate = dischargeRate
-        });
-    }
-    
-    public void Dispose()
-    {
-        StopAsync().GetAwaiter().GetResult();
+        return PInvoke.RegisterPowerSettingNotification(new HANDLE(Handle), &guid, 0);
     }
 }

@@ -6,9 +6,12 @@ using LenovoLegionToolkit.Lib.Utils;
 
 namespace LenovoLegionToolkit.Lib.Features.Hybrid;
 
-public class HybridModeFeature(GSyncFeature gSyncFeature, IGPUModeFeature igpuModeFeature, DGPUNotify dgpuNotify) : IFeature<HybridModeState>
+public class HybridModeFeature(GSyncFeature gSyncFeature, IGPUModeFeature igpuModeFeature, DGPUNotify dgpuNotify) : IFeature<HybridModeState>, IDisposable
 {
-    private readonly CancellationTokenSource _ensureDGPUEjectedIfNeededCancellationTokenSource = new();
+    private readonly object _ctsLock = new();
+    private CancellationTokenSource _ensureDGPUEjectedIfNeededCancellationTokenSource = new();
+
+    private bool _disposed;
 
     public async Task<bool> IsSupportedAsync()
     {
@@ -56,7 +59,14 @@ public class HybridModeFeature(GSyncFeature gSyncFeature, IGPUModeFeature igpuMo
 
     public async Task SetStateAsync(HybridModeState state)
     {
-        await _ensureDGPUEjectedIfNeededCancellationTokenSource.CancelAsync().ConfigureAwait(false);
+        CancellationTokenSource oldCts;
+        lock (_ctsLock)
+        {
+            oldCts = _ensureDGPUEjectedIfNeededCancellationTokenSource;
+            _ensureDGPUEjectedIfNeededCancellationTokenSource = new();
+        }
+        await oldCts.CancelAsync().ConfigureAwait(false);
+        oldCts.Dispose();
 
         var (gSync, igpuMode) = Unpack(state);
 
@@ -101,6 +111,14 @@ public class HybridModeFeature(GSyncFeature gSyncFeature, IGPUModeFeature igpuMo
         if (!await igpuModeFeature.IsSupportedAsync().ConfigureAwait(false) || !await dgpuNotify.IsSupportedAsync().ConfigureAwait(false))
             return;
 
+        CancellationToken token;
+        lock (_ctsLock)
+        {
+            if (_disposed)
+                return;
+            token = _ensureDGPUEjectedIfNeededCancellationTokenSource.Token;
+        }
+
         _ = Task.Run(async () =>
         {
             try
@@ -115,9 +133,9 @@ public class HybridModeFeature(GSyncFeature gSyncFeature, IGPUModeFeature igpuMo
 
                 while (retry <= maxRetries)
                 {
-                    await Task.Delay(delay).ConfigureAwait(false);
+                    await Task.Delay(delay, token).ConfigureAwait(false);
 
-                    if (_ensureDGPUEjectedIfNeededCancellationTokenSource.IsCancellationRequested)
+                    if (token.IsCancellationRequested)
                     {
                         if (Log.Instance.IsTraceEnabled)
                             Log.Instance.Trace($"Cancelled, aborting...");
@@ -171,4 +189,16 @@ public class HybridModeFeature(GSyncFeature gSyncFeature, IGPUModeFeature igpuMo
         (GSyncState.On, _) => HybridModeState.Off,
         _ => throw new InvalidOperationException("Invalid state"),
     };
+
+    public void Dispose()
+    {
+        lock (_ctsLock)
+        {
+            if (_disposed)
+                return;
+            _disposed = true;
+            _ensureDGPUEjectedIfNeededCancellationTokenSource.Cancel();
+            _ensureDGPUEjectedIfNeededCancellationTokenSource.Dispose();
+        }
+    }
 }

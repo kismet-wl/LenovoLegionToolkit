@@ -94,9 +94,23 @@ public class AIController(
         }
     }
 
-    private async void PowerModeListener_Changed(object? sender, PowerModeListener.ChangedEventArgs e) => await _dispatcher.DispatchAsync(RefreshAsync).ConfigureAwait(false);
-    private async void PowerStateListener_Changed(object? sender, PowerStateListener.ChangedEventArgs e) => await _dispatcher.DispatchAsync(RefreshAsync).ConfigureAwait(false);
-    private async void GameAutoListener_Changed(object? sender, GameAutoListener.ChangedEventArgs e) => await _dispatcher.DispatchAsync(RefreshAsync).ConfigureAwait(false);
+    private async void PowerModeListener_Changed(object? sender, PowerModeListener.ChangedEventArgs e)
+    {
+        try { await _dispatcher.DispatchAsync(RefreshAsync).ConfigureAwait(false); }
+        catch (Exception ex) when (Log.Instance.IsTraceEnabled) { Log.Instance.Trace($"PowerModeListener_Changed failed.", ex); }
+    }
+
+    private async void PowerStateListener_Changed(object? sender, PowerStateListener.ChangedEventArgs e)
+    {
+        try { await _dispatcher.DispatchAsync(RefreshAsync).ConfigureAwait(false); }
+        catch (Exception ex) when (Log.Instance.IsTraceEnabled) { Log.Instance.Trace($"PowerStateListener_Changed failed.", ex); }
+    }
+
+    private async void GameAutoListener_Changed(object? sender, GameAutoListener.ChangedEventArgs e)
+    {
+        try { await _dispatcher.DispatchAsync(RefreshAsync).ConfigureAwait(false); }
+        catch (Exception ex) when (Log.Instance.IsTraceEnabled) { Log.Instance.Trace($"GameAutoListener_Changed failed.", ex); }
+    }
 
     private async Task RefreshAsync()
     {

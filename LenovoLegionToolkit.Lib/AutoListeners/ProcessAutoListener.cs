@@ -82,7 +82,8 @@ public class ProcessAutoListener(
             string? processPath = null;
             try
             {
-                processPath = Process.GetProcessById(e.ProcessId).GetFileName();
+                using var process = Process.GetProcessById(e.ProcessId);
+                processPath = process.GetFileName();
             }
             catch (ArgumentException)
             {
@@ -141,7 +142,8 @@ public class ProcessAutoListener(
         {
             try
             {
-                _ = Process.GetProcessById(processId);
+                using var process = Process.GetProcessById(processId);
+                // 进程仍存在，保留在缓存中
             }
             catch (ArgumentException)
             {

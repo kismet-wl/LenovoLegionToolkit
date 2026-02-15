@@ -309,11 +309,9 @@ public class AutomationProcessor(
 
     private async Task ProcessEvent(IAutomationEvent e)
     {
-        var potentialMatch = _pipelines.SelectMany(p => p.AllTriggers)
-            .Select(async t => await t.IsMatchingEvent(e).ConfigureAwait(false))
-            .Select(t => t.Result)
-            .Where(t => t)
-            .Any();
+        var triggers = _pipelines.SelectMany(p => p.AllTriggers);
+        var results = await Task.WhenAll(triggers.Select(t => t.IsMatchingEvent(e))).ConfigureAwait(false);
+        var potentialMatch = results.Any(r => r);
 
         if (!potentialMatch)
             return;

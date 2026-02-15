@@ -16,6 +16,7 @@ internal class MacroPlayer
 {
     private const int MAGIC_NUMBER = 1337;
 
+    private readonly object _ctsLock = new();
     private readonly ThreadSafeBool _isPlayingInterruptableSequence = new();
 
     private Task _playTask = Task.CompletedTask;
@@ -30,17 +31,31 @@ internal class MacroPlayer
         if (kbStruct.dwExtraInfo == MAGIC_NUMBER)
             return;
 
-        _cancellationTokenSource.Cancel();
+        lock (_ctsLock)
+        {
+            _cancellationTokenSource.Cancel();
+        }
     }
 
     public async Task StartPlayingAsync(MacroSequence sequence)
     {
-        await _cancellationTokenSource.CancelAsync();
+        CancellationTokenSource oldCts;
+        lock (_ctsLock)
+        {
+            oldCts = _cancellationTokenSource;
+            _cancellationTokenSource = new();
+        }
+
+        await oldCts.CancelAsync();
         try { await _playTask; }
         catch (OperationCanceledException) { }
+        finally { oldCts.Dispose(); }
 
-        _cancellationTokenSource = new();
-        var token = _cancellationTokenSource.Token;
+        CancellationToken token;
+        lock (_ctsLock)
+        {
+            token = _cancellationTokenSource.Token;
+        }
 
         _playTask = Task.Run(async () =>
         {

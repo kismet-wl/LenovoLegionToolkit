@@ -66,8 +66,12 @@ public static class WMIConnectionPool
             try
             {
                 // ManagementScope 不需要显式 Dispose
+                _ = scope.Scope; // 访问 scope 以确认有效
             }
-            catch { }
+            catch (Exception ex) when (Log.Instance.IsTraceEnabled)
+            {
+                Log.Instance.Trace($"Error accessing scope during clear: {ex.Message}");
+            }
         }
 
         _scopes.Clear();
@@ -115,12 +119,7 @@ public static class WMIConnectionPool
                 {
                     if (_scopes.TryRemove(entry.Key, out var scopeEntry))
                     {
-                        try
-                        {
-                            // ManagementScope 不需要显式 Dispose
-                        }
-                        catch { }
-
+                        // ManagementScope 不需要显式 Dispose
                         if (Log.Instance.IsTraceEnabled)
                             Log.Instance.Trace($"Removed WMI connection: {entry.Key} (last accessed: {scopeEntry.LastAccessed})");
                     }

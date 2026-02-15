@@ -77,7 +77,10 @@ public class GameAutoListener : AbstractAutoListener<GameAutoListener.ChangedEve
         lock (Lock)
         {
             foreach (var process in _processCache)
+            {
                 Detach(process);
+                process.Dispose();
+            }
 
             _processCache.Clear();
             _detectedGamePathsCache.Clear();
@@ -103,26 +106,44 @@ public class GameAutoListener : AbstractAutoListener<GameAutoListener.ChangedEve
             {
                 _detectedGamePathsCache.Add(game);
 
-                foreach (var process in Process.GetProcessesByName(game.Name))
+                Process[]? processes = null;
+                try
                 {
-                    try
+                    processes = Process.GetProcessesByName(game.Name);
+                    foreach (var process in processes)
                     {
-                        var processPath = process.MainModule?.FileName;
-                        if (game.ExecutablePath is null || !game.ExecutablePath.Equals(processPath, StringComparison.CurrentCultureIgnoreCase))
-                            continue;
-
-                        if (!_processCache.Contains(process))
+                        try
                         {
-                            Attach(process);
-                            _processCache.Add(process);
-                        }
+                            var processPath = process.MainModule?.FileName;
+                            if (game.ExecutablePath is null || !game.ExecutablePath.Equals(processPath, StringComparison.CurrentCultureIgnoreCase))
+                                continue;
 
-                        RaiseChangedIfNeeded(true);
+                            if (!_processCache.Contains(process))
+                            {
+                                Attach(process);
+                                _processCache.Add(process);
+                            }
+                            else
+                            {
+                                process.Dispose();
+                            }
+
+                            RaiseChangedIfNeeded(true);
+                        }
+                        catch (Exception)
+                        {
+                            process.Dispose();
+                            if (Log.Instance.IsTraceEnabled)
+                                Log.Instance.Trace($"Can't get game \"{game}\" details.");
+                        }
                     }
-                    catch (Exception)
+                }
+                finally
+                {
+                    if (processes is not null)
                     {
-                        if (Log.Instance.IsTraceEnabled)
-                            Log.Instance.Trace($"Can't get game \"{game}\" details.");
+                        foreach (var p in processes)
+                            p.Dispose();
                     }
                 }
             }
@@ -154,9 +175,10 @@ public class GameAutoListener : AbstractAutoListener<GameAutoListener.ChangedEve
             if (!_detectedGamePathsCache.Any(p => e.ProcessName.Equals(p.Name, StringComparison.CurrentCultureIgnoreCase)))
                 return;
 
+            Process? process = null;
             try
             {
-                var process = Process.GetProcessById(e.ProcessId);
+                process = Process.GetProcessById(e.ProcessId);
                 var processPath = process.GetFileName();
 
                 if (string.IsNullOrEmpty(processPath))
@@ -164,12 +186,16 @@ public class GameAutoListener : AbstractAutoListener<GameAutoListener.ChangedEve
                     if (Log.Instance.IsTraceEnabled)
                         Log.Instance.Trace($"Can't get path for {e.ProcessName}. [processId={e.ProcessId}]");
 
+                    process.Dispose();
                     return;
                 }
 
                 var processInfo = ProcessInfo.FromPath(processPath);
                 if (!_detectedGamePathsCache.Contains(processInfo))
+                {
+                    process.Dispose();
                     return;
+                }
 
                 if (Log.Instance.IsTraceEnabled)
                     Log.Instance.Trace($"Game {processInfo} is running. [processId={e.ProcessId}, processPath={processPath}]");
@@ -181,6 +207,7 @@ public class GameAutoListener : AbstractAutoListener<GameAutoListener.ChangedEve
             }
             catch (Exception ex)
             {
+                process?.Dispose();
                 if (Log.Instance.IsTraceEnabled)
                     Log.Instance.Trace($"Failed to attach to {e.ProcessName}. [processId={e.ProcessId}]", ex);
             }
@@ -230,8 +257,21 @@ public class GameAutoListener : AbstractAutoListener<GameAutoListener.ChangedEve
 
             var staleProcesses = _processCache.RemoveWhere(p =>
             {
-                try { return p.HasExited; }
-                catch { return true; }
+                try
+                {
+                    if (p.HasExited)
+                    {
+                        Detach(p);
+                        p.Dispose();
+                        return true;
+                    }
+                    return false;
+                }
+                catch
+                {
+                    try { p.Dispose(); } catch { }
+                    return true;
+                }
             });
 
             if (staleProcesses > 1)

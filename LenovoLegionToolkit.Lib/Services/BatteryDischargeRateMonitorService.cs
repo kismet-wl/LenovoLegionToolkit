@@ -35,7 +35,6 @@ public class BatteryDischargeRateMonitorService
         {
             _batteryStatusListener.StatusChanged -= BatteryStatusListener_StatusChanged;
             await _batteryStatusListener.StopAsync().ConfigureAwait(false);
-            _batteryStatusListener.Dispose();
             _batteryStatusListener = null;
         }
 

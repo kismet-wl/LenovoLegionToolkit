@@ -76,11 +76,19 @@ public abstract class AbstractDriverFeature<T>(Func<SafeFileHandle> driverHandle
             return outBuffer;
 
         var error = Marshal.GetLastWin32Error();
+        var errorMessage = error switch
+        {
+            2 => "Driver device not found. The required driver may not be installed or the device is not connected.",
+            5 => "Access denied. Try running the application as administrator.",
+            6 => "Invalid handle. The driver handle is invalid.",
+            _ => $"System error code: {error}"
+        };
 
         if (Log.Instance.IsTraceEnabled)
-            Log.Instance.Trace($"DeviceIoControl returned 0, last error: {error} [feature={GetType().Name}]");
+            Log.Instance.Trace($"DeviceIoControl failed: {errorMessage} [feature={GetType().Name}, error={error}]");
 
-        throw new InvalidOperationException($"DeviceIoControl returned 0, last error: {error}");
+        throw new InvalidOperationException(
+            $"Driver communication failed: {errorMessage} [feature={GetType().Name}]");
     });
 
     private async Task VerifyStateSetAsync(T state)

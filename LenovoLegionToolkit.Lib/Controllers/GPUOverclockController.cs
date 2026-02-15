@@ -45,7 +45,11 @@ public class GPUOverclockController
         }
         finally
         {
-            try { NVAPI.Unload(); } catch { /* Ignored */ }
+            try { NVAPI.Unload(); }
+            catch (Exception ex) when (Log.Instance.IsTraceEnabled)
+            {
+                Log.Instance.Trace($"Failed to unload NVAPI in GetMaxMemoryDeltaMhz.", ex);
+            }
         }
     }
 
@@ -64,7 +68,11 @@ public class GPUOverclockController
         }
         finally
         {
-            try { NVAPI.Unload(); } catch { /* Ignored */ }
+            try { NVAPI.Unload(); }
+            catch (Exception ex) when (Log.Instance.IsTraceEnabled)
+            {
+                Log.Instance.Trace($"Failed to unload NVAPI in IsSupportedAsync.", ex);
+            }
         }
 
         if (Log.Instance.IsTraceEnabled)
@@ -185,7 +193,11 @@ public class GPUOverclockController
         {
             Changed?.Invoke(this, EventArgs.Empty);
 
-            try { NVAPI.Unload(); } catch { /* Ignored */ }
+            try { NVAPI.Unload(); }
+            catch (Exception ex) when (Log.Instance.IsTraceEnabled)
+            {
+                Log.Instance.Trace($"Failed to unload NVAPI in ApplyStateAsync.", ex);
+            }
         }
     }
 
@@ -201,11 +213,18 @@ public class GPUOverclockController
 
     private async void NativeWindowsMessageListenerOnChanged(object? sender, NativeWindowsMessageListener.ChangedEventArgs e)
     {
-        if (e.Message != NativeWindowsMessage.OnDisplayDeviceArrival)
-            return;
+        try
+        {
+            if (e.Message != NativeWindowsMessage.OnDisplayDeviceArrival)
+                return;
 
-        if (await IsSupportedAsync().ConfigureAwait(false))
-            await ApplyStateAsync().ConfigureAwait(false);
+            if (await IsSupportedAsync().ConfigureAwait(false))
+                await ApplyStateAsync().ConfigureAwait(false);
+        }
+        catch (Exception ex) when (Log.Instance.IsTraceEnabled)
+        {
+            Log.Instance.Trace($"NativeWindowsMessageListenerOnChanged failed.", ex);
+        }
     }
 
     private static int GetMaxMemoryDeltaMhz(PhysicalGPU? gpu) => gpu?.MemoryInformation.RAMMaker switch

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using LenovoLegionToolkit.Lib.Extensions;
+using LenovoLegionToolkit.Lib.Listeners;
 using LenovoLegionToolkit.Lib.Resources;
 using LenovoLegionToolkit.Lib.System;
 using LenovoLegionToolkit.Lib.System.Management;
@@ -15,6 +16,7 @@ namespace LenovoLegionToolkit.Lib.Controllers;
 public class GPUController
 {
     private readonly AsyncLock _lock = new();
+    private readonly NativeWindowsMessageListener _windowsMessageListener = IoCContainer.Resolve<NativeWindowsMessageListener>();
 
     private Task? _refreshTask;
     private CancellationTokenSource? _refreshCancellationTokenSource;
@@ -182,16 +184,23 @@ public class GPUController
 
                 using (await _lock.LockAsync(token).ConfigureAwait(false))
                 {
+                    // 只在显示器开启时刷新 GPU 状态
+                    if (_windowsMessageListener.IsMonitorOn)
+                    {
+                        if (Log.Instance.IsTraceEnabled)
+                            Log.Instance.Trace($"Will refresh...");
 
-                    if (Log.Instance.IsTraceEnabled)
-                        Log.Instance.Trace($"Will refresh...");
+                        await RefreshStateAsync().ConfigureAwait(false);
 
-                    await RefreshStateAsync().ConfigureAwait(false);
+                        if (Log.Instance.IsTraceEnabled)
+                            Log.Instance.Trace($"Refreshed");
 
-                    if (Log.Instance.IsTraceEnabled)
-                        Log.Instance.Trace($"Refreshed");
-
-                    Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
+                        Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
+                    }
+                    else if (Log.Instance.IsTraceEnabled)
+                    {
+                        Log.Instance.Trace($"GPU refresh skipped (MonitorOff)");
+                    }
                 }
 
                 if (interval > 0)
