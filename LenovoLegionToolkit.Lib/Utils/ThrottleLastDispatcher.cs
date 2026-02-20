@@ -13,7 +13,10 @@ public class ThrottleLastDispatcher(TimeSpan interval, string? tag = null)
         try
         {
             if (_cancellationTokenSource is not null)
+            {
                 await _cancellationTokenSource.CancelAsync().ConfigureAwait(false);
+                _cancellationTokenSource.Dispose();
+            }
 
             _cancellationTokenSource = new();
 
