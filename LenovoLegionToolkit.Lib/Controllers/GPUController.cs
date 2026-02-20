@@ -27,6 +27,10 @@ public class GPUController
     private string? _gpuInstanceId;
     private string? _performanceState;
 
+    // 用于检测状态变化
+    private GPUState _lastState = GPUState.Unknown;
+    private string? _lastPerformanceState;
+
     public event EventHandler<GPUStatus>? Refreshed;
     public bool IsStarted { get => _refreshTask != null; }
 
@@ -55,6 +59,12 @@ public class GPUController
     {
         using (await _lock.LockAsync().ConfigureAwait(false))
             return _state;
+    }
+
+    public async Task<GPUStatus> GetLastKnownStatusAsync()
+    {
+        using (await _lock.LockAsync().ConfigureAwait(false))
+            return new GPUStatus(_state, _performanceState, _processes);
     }
 
     public async Task<GPUStatus> RefreshNowAsync()
@@ -196,12 +206,19 @@ public class GPUController
                         if (Log.Instance.IsTraceEnabled)
                             Log.Instance.Trace($"Will refresh...");
 
-                        await RefreshStateAsync().ConfigureAwait(false);
+                        var stateChanged = await RefreshStateAsync().ConfigureAwait(false);
 
                         if (Log.Instance.IsTraceEnabled)
-                            Log.Instance.Trace($"Refreshed");
+                            Log.Instance.Trace($"Refreshed, stateChanged={stateChanged}");
 
-                        Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
+                        // 只在状态变化时触发事件
+                        if (stateChanged)
+                        {
+                            if (Log.Instance.IsTraceEnabled)
+                                Log.Instance.Trace($"GPU state changed: {_state}");
+
+                            Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
+                        }
                     }
                 }
 
@@ -246,7 +263,7 @@ if (interval > 0)
         }
     }
 
-    private async Task RefreshStateAsync()
+    private async Task<bool> RefreshStateAsync()
     {
         if (Log.Instance.IsTraceEnabled)
             Log.Instance.Trace($"Refresh in progress...");
@@ -264,7 +281,9 @@ if (interval > 0)
             if (Log.Instance.IsTraceEnabled)
                 Log.Instance.Trace($"GPU present [state={_state}, processes.Count={_processes.Count}, gpuInstanceId={_gpuInstanceId}]");
 
-            return;
+            var changed = _state != _lastState;
+            _lastState = _state;
+            return changed;
         }
 
         try
@@ -282,7 +301,10 @@ if (interval > 0)
             if (Log.Instance.IsTraceEnabled)
                 Log.Instance.Trace($"Powered off [state={_state}, processes.Count={_processes.Count}, gpuInstanceId={_gpuInstanceId}]");
 
-            return;
+            var changed = _state != _lastState || _performanceState != _lastPerformanceState;
+            _lastState = _state;
+            _lastPerformanceState = _performanceState;
+            return changed;
         }
         catch (Exception ex)
         {
@@ -326,6 +348,13 @@ if (interval > 0)
             if (Log.Instance.IsTraceEnabled)
                 Log.Instance.Trace($"Inactive [state={_state}, processes.Count={_processes.Count}, gpuInstanceId={_gpuInstanceId}]");
         }
+
+        // 检测状态变化
+        var stateChanged = _state != _lastState || _performanceState != _lastPerformanceState;
+        _lastState = _state;
+        _lastPerformanceState = _performanceState;
+
+        return stateChanged;
     }
 
     private void MonitorStateChanged(object? sender, bool isMonitorOn)

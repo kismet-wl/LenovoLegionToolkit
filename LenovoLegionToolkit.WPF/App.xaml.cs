@@ -60,8 +60,16 @@ public partial class App
                 .Where(p => p.Id != Environment.ProcessId)
                 .ForEach(p =>
                 {
-                    p.Kill();
-                    p.WaitForExit();
+                    try
+                    {
+                        p.Kill();
+                        p.WaitForExit();
+                    }
+                    catch (Exception ex)
+                    {
+                        if (Log.Instance.IsTraceEnabled)
+                            Log.Instance.Trace($"[App] Cannot kill process {p.Id}: {ex.Message}");
+                    }
                 });
         }
 #endif
@@ -136,7 +144,8 @@ public partial class App
             InitSpectrumKeyboardControllerAsync(),
             InitGpuOverclockControllerAsync(),
             InitHybridModeAsync(),
-            InitAutomationProcessorAsync()
+            InitAutomationProcessorAsync(),
+            InitGPUControllerAsync()
         };
 
         // InitMacroController 是同步方法，单独调用
@@ -187,6 +196,25 @@ public partial class App
 
     private void Application_Exit(object sender, ExitEventArgs e)
     {
+        // Restore mouse wake permissions on exit
+        try
+        {
+            if (IoCContainer.TryResolve<IDevicePowerManagerService>() is { } devicePowerManagerService)
+            {
+                if (Log.Instance.IsTraceEnabled)
+                    Log.Instance.Trace($"Restoring mouse wake permissions on exit");
+
+                var restoredCount = devicePowerManagerService.RestoreAllMiceWake();
+                if (Log.Instance.IsTraceEnabled)
+                    Log.Instance.Trace($"Restored wake for {restoredCount} devices on exit");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"Failed to restore mouse wake permissions on exit: {ex.Message}");
+        }
+
 #if !DEBUG
         try
         {
@@ -231,6 +259,13 @@ public partial class App
         {
             if (IoCContainer.TryResolve<AIController>() is { } aiController)
                 await aiController.StopAsync();
+        }
+        catch {  /* Ignored. */ }
+
+        try
+        {
+            if (IoCContainer.TryResolve<GPUController>() is { } gpuController)
+                await gpuController.StopAsync();
         }
         catch {  /* Ignored. */ }
 
@@ -625,5 +660,33 @@ public partial class App
     {
         var controller = IoCContainer.Resolve<MacroController>();
         controller.Start();
+    }
+
+    private static async Task InitGPUControllerAsync()
+    {
+        try
+        {
+            var controller = IoCContainer.Resolve<GPUController>();
+            if (controller.IsSupported())
+            {
+                if (Log.Instance.IsTraceEnabled)
+                    Log.Instance.Trace($"Starting GPU controller...");
+
+                await controller.StartAsync();
+
+                if (Log.Instance.IsTraceEnabled)
+                    Log.Instance.Trace($"GPU controller started.");
+            }
+            else
+            {
+                if (Log.Instance.IsTraceEnabled)
+                    Log.Instance.Trace($"GPU controller is not supported.");
+            }
+        }
+        catch (Exception ex)
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"Couldn't start GPU controller.", ex);
+        }
     }
 }

@@ -98,6 +98,7 @@ public class IoCModule : Module
         builder.Register<SystemThemeListener>().AutoActivateListener();
         builder.Register<ThermalModeListener>().AutoActivateListener();
         builder.Register<WinKeyListener>().AutoActivateListener();
+        builder.Register<BatteryStatusListener>().AutoActivateListener();
 
         builder.Register<GameAutoListener>();
         builder.Register<InstanceStartedEventAutoAutoListener>();
@@ -136,5 +137,9 @@ public class IoCModule : Module
         builder.Register<SunriseSunset>();
 
         builder.Register<BatteryDischargeRateMonitorService>();
+
+        builder.RegisterType<PowerRequestMonitorService>().As<IPowerRequestMonitorService>().SingleInstance();
+        builder.RegisterType<ProcessManagementService>().As<IProcessManagementService>().SingleInstance();
+        builder.RegisterType<DevicePowerManagerService>().As<IDevicePowerManagerService>().SingleInstance().AutoActivate();
     }
 }

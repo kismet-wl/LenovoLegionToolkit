@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
@@ -8,6 +9,7 @@ using LenovoLegionToolkit.Lib.Controllers;
 using LenovoLegionToolkit.Lib.Controllers.GodMode;
 using LenovoLegionToolkit.Lib.Extensions;
 using LenovoLegionToolkit.Lib.Features;
+using LenovoLegionToolkit.Lib.Listeners;
 using LenovoLegionToolkit.Lib.System;
 using LenovoLegionToolkit.Lib.Utils;
 using LenovoLegionToolkit.WPF.Extensions;
@@ -18,6 +20,13 @@ namespace LenovoLegionToolkit.WPF.Windows.Utils;
 
 public partial class StatusWindow
 {
+    private readonly GPUController _gpuController = IoCContainer.Resolve<GPUController>();
+    private readonly BatteryStatusListener _batteryStatusListener = IoCContainer.Resolve<BatteryStatusListener>();
+    private readonly BatteryFeature _batteryFeature = IoCContainer.Resolve<BatteryFeature>();
+
+    private CancellationTokenSource? _batteryRefreshCts;
+    private Task? _batteryRefreshTask;
+
     private readonly struct StatusWindowData(
         PowerModeState? powerModeState,
         string? godModePresetName,
@@ -66,8 +75,13 @@ public partial class StatusWindow
         try
         {
             if (gpuController.IsSupported())
-                gpuStatus = await gpuController.RefreshNowAsync();
-
+            {
+                // 如果 GPUController 已启动，使用缓存状态；否则刷新获取
+                if (gpuController.IsStarted)
+                    gpuStatus = await gpuController.GetLastKnownStatusAsync();
+                else
+                    gpuStatus = await gpuController.RefreshNowAsync();
+            }
         }
         catch { /* Ignored */ }
 
@@ -99,6 +113,13 @@ public partial class StatusWindow
         InitializeComponent();
 
         Loaded += StatusWindow_Loaded;
+        Closed += StatusWindow_Closed;
+
+        // 订阅 GPU 状态变化事件
+        _gpuController.Refreshed += OnGPURefreshed;
+
+        // 订阅电池状态变化事件
+        _batteryStatusListener.Changed += OnBatteryChanged;
 
         WindowStyle = WindowStyle.None;
         WindowStartupLocation = WindowStartupLocation.Manual;
@@ -121,7 +142,7 @@ public partial class StatusWindow
 #endif
 
         if (Log.Instance.IsTraceEnabled)
-            _title.Text += " [LOGGING ENABLED]";
+            _title.Text += "\n[LOGGING ENABLED]";
 
         RefreshPowerMode(data.PowerModeState, data.GodModePresetName);
         RefreshDiscreteGpu(data.GPUStatus);
@@ -129,7 +150,66 @@ public partial class StatusWindow
         RefreshUpdate(data.HasUpdate);
     }
 
-    private void StatusWindow_Loaded(object sender, RoutedEventArgs e) => MoveBottomRightEdgeOfWindowToMousePosition();
+    private void StatusWindow_Closed(object? sender, EventArgs e)
+    {
+        _gpuController.Refreshed -= OnGPURefreshed;
+        _batteryStatusListener.Changed -= OnBatteryChanged;
+
+        // 停止电池轮询任务
+        _batteryRefreshCts?.Cancel();
+        _batteryRefreshCts = null;
+        _batteryRefreshTask = null;
+    }
+
+    private void OnGPURefreshed(object? sender, GPUStatus e)
+    {
+        Dispatcher.Invoke(() => RefreshDiscreteGpu(e));
+    }
+
+    private void OnBatteryChanged(object? sender, BatteryStatusListener.ChangedEventArgs e)
+    {
+        Dispatcher.Invoke(async () =>
+        {
+            try
+            {
+                var batteryInfo = Battery.GetBatteryInformation();
+                var batteryState = await _batteryFeature.GetStateAsync();
+                RefreshBattery(batteryInfo, batteryState);
+            }
+            catch { /* Ignored */ }
+        });
+    }
+
+    private void StatusWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        MoveBottomRightEdgeOfWindowToMousePosition();
+
+        // 启动电池数据轮询任务（每 2 秒刷新一次）
+        StartBatteryRefreshTask();
+    }
+
+    private void StartBatteryRefreshTask()
+    {
+        _batteryRefreshCts = new CancellationTokenSource();
+        var token = _batteryRefreshCts.Token;
+
+        _batteryRefreshTask = Task.Run(async () =>
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    var batteryInfo = Battery.GetBatteryInformation();
+                    var batteryState = await _batteryFeature.GetStateAsync();
+                    Dispatcher.Invoke(() => RefreshBattery(batteryInfo, batteryState));
+
+                    await Task.Delay(TimeSpan.FromSeconds(2), token);
+                }
+                catch (OperationCanceledException) { }
+                catch { /* Ignored */ }
+            }
+        }, token);
+    }
 
     private void MoveBottomRightEdgeOfWindowToMousePosition()
     {

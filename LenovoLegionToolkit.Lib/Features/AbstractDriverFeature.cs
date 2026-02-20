@@ -87,8 +87,7 @@ public abstract class AbstractDriverFeature<T>(Func<SafeFileHandle> driverHandle
         if (Log.Instance.IsTraceEnabled)
             Log.Instance.Trace($"DeviceIoControl failed: {errorMessage} [feature={GetType().Name}, error={error}]");
 
-        throw new InvalidOperationException(
-            $"Driver communication failed: {errorMessage} [feature={GetType().Name}]");
+        return 0u;
     });
 
     private async Task VerifyStateSetAsync(T state)

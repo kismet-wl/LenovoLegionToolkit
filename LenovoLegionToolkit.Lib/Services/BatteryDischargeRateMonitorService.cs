@@ -7,42 +7,46 @@ using LenovoLegionToolkit.Lib.Utils;
 namespace LenovoLegionToolkit.Lib.Services;
 
 /// <summary>
-/// 电池放电率监控服务 - 使用 Windows API 事件驱动
+/// 电池放电率监控服务 - 使用共享的 BatteryStatusListener
 /// </summary>
 public class BatteryDischargeRateMonitorService
 {
-    private BatteryStatusListener? _batteryStatusListener;
+    private readonly BatteryStatusListener _batteryStatusListener;
+    private bool _isStarted;
+
+    public BatteryDischargeRateMonitorService(BatteryStatusListener batteryStatusListener)
+    {
+        _batteryStatusListener = batteryStatusListener;
+    }
 
     public async Task StartStopIfNeededAsync()
     {
-        await StopAsync().ConfigureAwait(false);
-
-        if (_batteryStatusListener != null)
+        if (_isStarted)
             return;
 
-        _batteryStatusListener = new BatteryStatusListener();
-        _batteryStatusListener.StatusChanged += BatteryStatusListener_StatusChanged;
-        
-        await _batteryStatusListener.StartAsync().ConfigureAwait(false);
+        _batteryStatusListener.Changed += BatteryStatusListener_StatusChanged;
+        _isStarted = true;
+
+        if (Log.Instance.IsTraceEnabled)
+            Log.Instance.Trace($"Started listening to battery status changes.");
     }
 
     public async Task StopAsync()
     {
+        if (!_isStarted)
+            return;
+
         if (Log.Instance.IsTraceEnabled)
             Log.Instance.Trace($"Stopping...");
 
-        if (_batteryStatusListener != null)
-        {
-            _batteryStatusListener.StatusChanged -= BatteryStatusListener_StatusChanged;
-            await _batteryStatusListener.StopAsync().ConfigureAwait(false);
-            _batteryStatusListener = null;
-        }
+        _batteryStatusListener.Changed -= BatteryStatusListener_StatusChanged;
+        _isStarted = false;
 
         if (Log.Instance.IsTraceEnabled)
             Log.Instance.Trace($"Stopped.");
     }
 
-    private void BatteryStatusListener_StatusChanged(object? sender, BatteryStatusListener.BatteryStatusChangedEventArgs e)
+    private void BatteryStatusListener_StatusChanged(object? sender, BatteryStatusListener.ChangedEventArgs e)
     {
         try
         {
