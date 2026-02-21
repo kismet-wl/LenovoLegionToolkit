@@ -31,8 +31,11 @@ public class GPUController
     private GPUState _lastState = GPUState.Unknown;
     private string? _lastPerformanceState;
 
+    // GPU 断电后暂停轮询标记
+    private bool _isPausedDueToPowerOff = false;
+
     public event EventHandler<GPUStatus>? Refreshed;
-    public bool IsStarted { get => _refreshTask != null; }
+    public bool IsStarted { get => _refreshTask is not null && !_refreshTask.IsCompleted; }
 
     public bool IsSupported()
     {
@@ -78,6 +81,8 @@ public class GPUController
 
     public Task StartAsync(int delay = 1_000, int interval = 5_000)
     {
+        _isPausedDueToPowerOff = false;  // 重置暂停状态
+
         if (IsStarted)
             return Task.CompletedTask;
 
@@ -89,6 +94,26 @@ public class GPUController
         var token = _refreshCancellationTokenSource.Token;
         _refreshTask = Task.Run(() => RefreshLoopAsync(delay, interval, token), token);
         return Task.CompletedTask;
+    }
+
+    public async Task ResumeIfPausedAsync()
+    {
+        // 清理已完成的任务，允许重新启动
+        if (_refreshTask is not null && _refreshTask.IsCompleted)
+        {
+            _refreshTask = null;
+            _refreshCancellationTokenSource = null;
+        }
+
+        if (!_isPausedDueToPowerOff)
+            return;
+
+        if (Log.Instance.IsTraceEnabled)
+            Log.Instance.Trace($"Resuming from power-off pause...");
+
+        _isPausedDueToPowerOff = false;
+        _lastState = GPUState.Unknown;  // 重置状态，确保下次刷新会触发事件
+        await StartAsync();
     }
 
     public async Task StopAsync(bool waitForFinish = false)
@@ -218,6 +243,15 @@ public class GPUController
                                 Log.Instance.Trace($"GPU state changed: {_state}");
 
                             Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
+                        }
+
+                        // GPU 断电后停止轮询，避免唤醒 GPU
+                        if (_state == GPUState.PoweredOff)
+                        {
+                            _isPausedDueToPowerOff = true;
+                            if (Log.Instance.IsTraceEnabled)
+                                Log.Instance.Trace($"GPU powered off, stopping polling to avoid waking GPU");
+                            return;
                         }
                     }
                 }

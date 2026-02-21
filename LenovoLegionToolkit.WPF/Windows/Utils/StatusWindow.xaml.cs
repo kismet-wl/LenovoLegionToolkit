@@ -43,7 +43,12 @@ public partial class StatusWindow
         public bool HasUpdate { get; } = hasUpdate;
     }
 
-    public static async Task<StatusWindow> CreateAsync() => new(await GetStatusWindowDataAsync());
+    public static async Task<StatusWindow> CreateAsync()
+    {
+        var gpuController = IoCContainer.Resolve<GPUController>();
+        await gpuController.ResumeIfPausedAsync();
+        return new(await GetStatusWindowDataAsync());
+    }
 
     private static async Task<StatusWindowData> GetStatusWindowDataAsync()
     {

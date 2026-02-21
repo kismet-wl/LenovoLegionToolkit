@@ -36,6 +36,7 @@ public partial class DiscreteGPUControl
         if (!IsVisible)
             return;
 
+        await _gpuController.ResumeIfPausedAsync();
         await _gpuController.StartAsync();
     }
 
@@ -45,17 +46,17 @@ public partial class DiscreteGPUControl
             return;
 
         Visibility = Visibility.Visible;
+        await _gpuController.ResumeIfPausedAsync();
         await RefreshAsync();
     }
 
-    private async void DiscreteGPUControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    private void DiscreteGPUControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (IsVisible)
             return;
 
         _content.Visibility = Visibility.Hidden;
-
-        await _gpuController.StopAsync();
+        // GPUController 现在由应用级别管理，不再随控件可见性停止
     }
 
     private void GpuController_Refreshed(object? sender, GPUStatus e) => Dispatcher.Invoke(() =>
