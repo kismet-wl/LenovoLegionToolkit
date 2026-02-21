@@ -42,12 +42,14 @@ public class TrayHelper : IDisposable
 
         var notifyIcon = new NotifyIcon
         {
-            Icon = AssetResources.icon,
-            Text = Resource.AppName
+            Icon = AssetResources.icon
         };
 
         if (trayTooltipEnabled)
+        {
+            notifyIcon.Text = Resource.AppName;
             notifyIcon.ToolTipWindow = async () => await StatusWindow.CreateAsync();
+        }
 
         notifyIcon.ContextMenu = _contextMenu;
         notifyIcon.OnClick += (_, _) => _bringToForeground();
