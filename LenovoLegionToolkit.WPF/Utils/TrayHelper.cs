@@ -47,7 +47,6 @@ public class TrayHelper : IDisposable
 
         if (trayTooltipEnabled)
         {
-            notifyIcon.Text = Resource.AppName;
             notifyIcon.ToolTipWindow = async () => await StatusWindow.CreateAsync();
         }
 
