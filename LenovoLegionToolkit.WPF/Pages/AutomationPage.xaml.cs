@@ -200,13 +200,14 @@ public partial class AutomationPage
         if (EnableHybridModeAutomation)
             steps.Add(new HybridModeAutomationStep(default));
 
-        for (var index = steps.Count - 1; index >= 0; index--)
+        // 并行执行特性检测，减少加载时间
+        var supportedTasks = steps.Select(async step =>
         {
-            if (!await steps[index].IsSupportedAsync())
-                steps.RemoveAt(index);
-        }
-
-        return [.. steps];
+            var isSupported = await step.IsSupportedAsync();
+            return new { Step = step, IsSupported = isSupported };
+        });
+        var results = await Task.WhenAll(supportedTasks);
+        return results.Where(r => r.IsSupported).Select(r => r.Step).ToArray();
     }
 
     private AutomationPipelineControl GenerateControl(AutomationPipeline pipeline, Panel stackPanel, bool allowQuickActionAutomationStep = true)

@@ -113,7 +113,7 @@ public class IoCModule : Module
         builder.Register<GodModeController>();
         builder.Register<GodModeControllerV1>(true);
         builder.Register<GodModeControllerV2>(true);
-        builder.Register<GPUController>();
+        builder.RegisterType<GPUController>().SingleInstance();
         builder.Register<GPUOverclockController>();
         builder.Register<RGBKeyboardBacklightController>();
         builder.Register<SensorsController>();
