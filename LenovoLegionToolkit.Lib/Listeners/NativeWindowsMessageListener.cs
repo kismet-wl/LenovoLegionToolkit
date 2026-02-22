@@ -123,13 +123,8 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
             // Initialize Activity Awareness Monitor
             await _activityAwarenessMonitor.InitializeAsync().ConfigureAwait(false);
 
-            // Initialize Raw Input Monitor
-            var hwnd = Handle;
-            if (!_rawInputMonitor.Initialize(hwnd))
-            {
-                if (Log.Instance.IsTraceEnabled)
-                    Log.Instance.Trace($"[NativeWindowsMessageListener] Raw Input Monitor initialization failed");
-            }
+            // Note: Raw Input Monitor is now started on-demand in TurnOffMonitorAsync
+            // to reduce resource usage when screen is on
 
             // Start monitoring
             if (_activityAwarenessMonitor.IsSupported)
@@ -149,6 +144,34 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
             if (Log.Instance.IsTraceEnabled)
                 Log.Instance.Trace($"[NativeWindowsMessageListener] Error initializing diagnostic monitors: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Starts Raw Input monitoring for screen-off input detection.
+    /// </summary>
+    private void StartRawInputMonitoring()
+    {
+        var hwnd = Handle;
+        if (!_rawInputMonitor.Initialize(hwnd))
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"[NativeWindowsMessageListener] Raw Input Monitor initialization failed");
+        }
+        else
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"[NativeWindowsMessageListener] Raw Input Monitor started for screen-off detection");
+        }
+    }
+
+    /// <summary>
+    /// Stops Raw Input monitoring when screen is turned on.
+    /// </summary>
+    private void StopRawInputMonitoring()
+    {
+        _rawInputMonitor.Dispose();
+        if (Log.Instance.IsTraceEnabled)
+            Log.Instance.Trace($"[NativeWindowsMessageListener] Raw Input Monitor stopped");
     }
 
     public async Task TurnOffMonitorAsync()
@@ -229,6 +252,9 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
 
         // Start input monitoring timer to detect user activity via GetLastInputInfo
         StartInputMonitoring();
+
+        // Start Raw Input monitoring for accurate input detection during screen-off
+        StartRawInputMonitoring();
     }
 
     /// <summary>
@@ -406,6 +432,9 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
 
         // Stop input monitoring timer
         StopInputMonitoring();
+
+        // Stop Raw Input monitoring
+        StopRawInputMonitoring();
 
         // Turn monitor back on via DDC/CI if it was used
         if (MonitorPowerControl.IsSupported)
