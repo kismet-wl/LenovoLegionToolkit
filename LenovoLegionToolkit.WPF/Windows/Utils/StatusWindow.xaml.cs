@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -11,6 +11,7 @@ using LenovoLegionToolkit.Lib.Extensions;
 using LenovoLegionToolkit.Lib.Features;
 using LenovoLegionToolkit.Lib.Listeners;
 using LenovoLegionToolkit.Lib.System;
+using System.Drawing;
 using LenovoLegionToolkit.Lib.Utils;
 using LenovoLegionToolkit.WPF.Extensions;
 using Wpf.Ui.Appearance;
@@ -27,7 +28,10 @@ public partial class StatusWindow
     private CancellationTokenSource? _batteryRefreshCts;
     private Task? _batteryRefreshTask;
 
+    private Rectangle? _iconRectangle;
+
     private readonly struct StatusWindowData(
+        Rectangle? iconRectangle,
         PowerModeState? powerModeState,
         string? godModePresetName,
         GPUStatus? gpuStatus,
@@ -35,6 +39,7 @@ public partial class StatusWindow
         BatteryState? batteryState,
         bool hasUpdate)
     {
+        public Rectangle? IconRectangle { get; } = iconRectangle;
         public PowerModeState? PowerModeState { get; } = powerModeState;
         public string? GodModePresetName { get; } = godModePresetName;
         public GPUStatus? GPUStatus { get; } = gpuStatus;
@@ -43,14 +48,14 @@ public partial class StatusWindow
         public bool HasUpdate { get; } = hasUpdate;
     }
 
-    public static async Task<StatusWindow> CreateAsync()
+    public static async Task<StatusWindow> CreateAsync(Rectangle? iconRectangle)
     {
         var gpuController = IoCContainer.Resolve<GPUController>();
         await gpuController.ResumeIfPausedAsync();
-        return new(await GetStatusWindowDataAsync());
+        return new(await GetStatusWindowDataAsync(iconRectangle));
     }
 
-    private static async Task<StatusWindowData> GetStatusWindowDataAsync()
+    private static async Task<StatusWindowData> GetStatusWindowDataAsync(Rectangle? iconRectangle)
     {
         var powerModeFeature = IoCContainer.Resolve<PowerModeFeature>();
         var godModeController = IoCContainer.Resolve<GodModeController>();
@@ -81,7 +86,7 @@ public partial class StatusWindow
         {
             if (gpuController.IsSupported())
             {
-                // 如果 GPUController 已启动，使用缓存状态；否则刷新获取
+                // ��� GPUController ��������ʹ�û���״̬������ˢ�»�ȡ
                 if (gpuController.IsStarted)
                     gpuStatus = await gpuController.GetLastKnownStatusAsync();
                 else
@@ -110,27 +115,29 @@ public partial class StatusWindow
         }
         catch { /* Ignored */ }
 
-        return new(state, godModePresetName, gpuStatus, batteryInformation, batteryState, hasUpdate);
+        return new(iconRectangle, state, godModePresetName, gpuStatus, batteryInformation, batteryState, hasUpdate);
     }
 
     private StatusWindow(StatusWindowData data)
     {
         InitializeComponent();
 
+        _iconRectangle = data.IconRectangle;
+
         Loaded += StatusWindow_Loaded;
         Closed += StatusWindow_Closed;
 
-        // 订阅 GPU 状态变化事件
+        // ���� GPU ״̬�仯�¼�
         _gpuController.Refreshed += OnGPURefreshed;
 
-        // 订阅电池状态变化事件
+        // ���ĵ��״̬�仯�¼�
         _batteryStatusListener.Changed += OnBatteryChanged;
 
         WindowStyle = WindowStyle.None;
         WindowStartupLocation = WindowStartupLocation.Manual;
         WindowBackdropType = BackgroundType.None;
         ResizeMode = ResizeMode.NoResize;
-        SizeToContent = SizeToContent.WidthAndHeight;
+        SizeToContent = SizeToContent.Height;
 
         Focusable = false;
         Topmost = true;
@@ -160,7 +167,7 @@ public partial class StatusWindow
         _gpuController.Refreshed -= OnGPURefreshed;
         _batteryStatusListener.Changed -= OnBatteryChanged;
 
-        // 停止电池轮询任务
+        // ֹͣ�����ѯ����
         _batteryRefreshCts?.Cancel();
         _batteryRefreshCts = null;
         _batteryRefreshTask = null;
@@ -187,9 +194,9 @@ public partial class StatusWindow
 
     private void StatusWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        MoveBottomRightEdgeOfWindowToMousePosition();
+        PositionWindowRelativeToTrayIcon();
 
-        // 启动电池数据轮询任务（每 2 秒刷新一次）
+        // �������������ѯ����ÿ 2 ��ˢ��һ�Σ�
         StartBatteryRefreshTask();
     }
 
@@ -216,6 +223,59 @@ public partial class StatusWindow
         }, token);
     }
 
+    private void PositionWindowRelativeToTrayIcon()
+    {
+        var transform = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformFromDevice;
+        if (!transform.HasValue)
+        {
+            Left = 0;
+            Top = 0;
+            return;
+        }
+
+        // 无法获取图标位置时回退到鼠标位置定位
+        if (_iconRectangle is null)
+        {
+            MoveBottomRightEdgeOfWindowToMousePosition();
+            return;
+        }
+
+        var iconRect = _iconRectangle.Value;
+        var screenRectangle = Screen.FromPoint(new System.Drawing.Point(iconRect.Left, iconRect.Top)).WorkingArea;
+
+        // 图标中心点
+        var iconCenterX = (iconRect.Left + iconRect.Right) / 2.0;
+
+        // 转换到 WPF 坐标
+        var screenLeft = transform.Value.Transform(new System.Windows.Point(screenRectangle.Left, 0)).X;
+        var screenRight = transform.Value.Transform(new System.Windows.Point(screenRectangle.Right, 0)).X;
+        var iconCenterWpf = transform.Value.Transform(new System.Windows.Point(iconCenterX, 0)).X;
+
+        // 水平：窗口中心对准图标中心
+        Left = iconCenterWpf - ActualWidth / 2;
+
+        // 确保不超出屏幕边界
+        Left = Math.Max(screenLeft, Left);
+        Left = Math.Min(screenRight - ActualWidth, Left);
+
+        // 垂直：根据任务栏位置
+        if (iconRect.Bottom >= screenRectangle.Bottom - 10)
+        {
+            // 任务栏在底部 - 窗口在图标上方
+            Top = transform.Value.Transform(new System.Windows.Point(0, iconRect.Top)).Y - ActualHeight - 4;
+        }
+        else if (iconRect.Top <= screenRectangle.Top + 10)
+        {
+            // 任务栏在顶部 - 窗口在图标下方
+            Top = transform.Value.Transform(new System.Windows.Point(0, iconRect.Bottom)).Y + 4;
+        }
+        else
+        {
+            // 侧边任务栏 - 回退到鼠标位置
+            MoveBottomRightEdgeOfWindowToMousePosition();
+        }
+    }
+
     private void MoveBottomRightEdgeOfWindowToMousePosition()
     {
         var transform = PresentationSource.FromVisual(this)?.CompositionTarget?.TransformFromDevice;
@@ -231,7 +291,7 @@ public partial class StatusWindow
         var mousePoint = Control.MousePosition;
         var screenRectangle = Screen.FromPoint(mousePoint).WorkingArea;
 
-        var mouse = transform.Value.Transform(new Point(mousePoint.X, mousePoint.Y));
+        var mouse = transform.Value.Transform(new System.Windows.Point(mousePoint.X, mousePoint.Y));
         var screen = transform.Value.Transform(new Vector(screenRectangle.Width, screenRectangle.Height));
 
         if (mouse.X + offset + ActualWidth > screen.X)

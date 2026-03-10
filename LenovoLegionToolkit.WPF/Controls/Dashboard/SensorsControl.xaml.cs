@@ -62,6 +62,9 @@ public partial class SensorsControl
 
     private async void SensorsControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
+        if (Log.Instance.IsTraceEnabled)
+            Log.Instance.Trace($"IsVisibleChanged: IsVisible={IsVisible}");
+
         if (IsVisible)
         {
             Refresh();
@@ -83,11 +86,18 @@ public partial class SensorsControl
 
     private void Refresh()
     {
+        if (Log.Instance.IsTraceEnabled)
+            Log.Instance.Trace($"Refresh() called, IsVisible={IsVisible}, IsMonitorOn={_windowsMessageListener.IsMonitorOn}");
+
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
 
+        // 确保显示器状态令牌被正确初始化，每次刷新都使用新的令牌
+        _monitorStateCts?.Cancel();
+        _monitorStateCts = new CancellationTokenSource();
+
         var token = _cts.Token;
-        var monitorStateToken = _monitorStateCts?.Token ?? CancellationToken.None;
+        var monitorStateToken = _monitorStateCts.Token;
 
         _refreshTask = Task.Run(async () =>
         {
@@ -114,6 +124,11 @@ public partial class SensorsControl
                     {
                         var data = await _controller.GetDataAsync();
                         Dispatcher.Invoke(() => UpdateValues(data));
+                    }
+                    else
+                    {
+                        if (Log.Instance.IsTraceEnabled)
+                            Log.Instance.Trace($"Skipping refresh: IsMonitorOn={_windowsMessageListener.IsMonitorOn}, IsVisible={IsVisible}");
                     }
                     
                     await Task.Delay(TimeSpan.FromSeconds(_dashboardSettings.Store.SensorsRefreshIntervalSeconds), token);
@@ -194,19 +209,21 @@ public partial class SensorsControl
 
     private void MonitorStateChanged(object? sender, bool isMonitorOn)
     {
-        if (IsVisible)
+        if (Log.Instance.IsTraceEnabled)
+            Log.Instance.Trace($"MonitorStateChanged: isMonitorOn={isMonitorOn}, IsVisible={IsVisible}");
+
+        if (!IsVisible)
+            return;
+
+        if (isMonitorOn)
         {
-            if (isMonitorOn)
-            {
-                // 显示器开启，恢复刷新
-                Refresh();
-            }
-            else
-            {
-                // 显示器关闭，暂停刷新
-                _monitorStateCts?.Cancel();
-                _monitorStateCts = new();
-            }
+            // 显示器开启，恢复刷新
+            Refresh();
+        }
+        else
+        {
+            // 显示器关闭，暂停刷新（取消当前的 monitorStateCts，刷新循环会检测到并停止）
+            _monitorStateCts?.Cancel();
         }
     }
 

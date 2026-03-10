@@ -29,10 +29,10 @@ public abstract class AbstractRefreshingControl : UserControl
 
     protected abstract void OnFinishedLoading();
 
-    private async void RefreshingControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+    private void RefreshingControl_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (IsVisible)
-            await RefreshAsync();
+            _ = RefreshAsync();  // Fire-and-forget: 不等待刷新完成，允许并行刷新
     }
 
     protected async Task RefreshAsync()

@@ -19,37 +19,36 @@ public class GPUOverclockController
     private readonly VantageDisabler _vantageDisabler;
     private readonly LegionZoneDisabler _legionZoneDisabler;
     private readonly NativeWindowsMessageListener _nativeWindowsMessageListener;
+    private readonly NVAPIService _nvapiService;
 
     public event EventHandler? Changed;
 
     public GPUOverclockController(GPUOverclockSettings settings,
         VantageDisabler vantageDisabler,
         LegionZoneDisabler legionZoneDisabler,
-        NativeWindowsMessageListener nativeWindowsMessageListener)
+        NativeWindowsMessageListener nativeWindowsMessageListener,
+        NVAPIService nvapiService)
     {
         _settings = settings;
         _vantageDisabler = vantageDisabler;
         _legionZoneDisabler = legionZoneDisabler;
         _nativeWindowsMessageListener = nativeWindowsMessageListener;
+        _nvapiService = nvapiService;
         _nativeWindowsMessageListener.Changed += NativeWindowsMessageListenerOnChanged;
     }
 
     public static int GetMaxCoreDeltaMhz() => 500;
 
-    public static int GetMaxMemoryDeltaMhz()
+    public int GetMaxMemoryDeltaMhz()
     {
         try
         {
-            NVAPI.Initialize();
-            return GetMaxMemoryDeltaMhz(NVAPI.GetGPU());
+            _nvapiService.Initialize();
+            return GetMaxMemoryDeltaMhz(_nvapiService.GetGPU());
         }
-        finally
+        catch
         {
-            try { NVAPI.Unload(); }
-            catch (Exception ex) when (Log.Instance.IsTraceEnabled)
-            {
-                Log.Instance.Trace($"Failed to unload NVAPI in GetMaxMemoryDeltaMhz.", ex);
-            }
+            return 750; // 默认值
         }
     }
 
@@ -59,20 +58,12 @@ public class GPUOverclockController
 
         try
         {
-            NVAPI.Initialize();
-            isSupported = NVAPI.GetGPU() is not null;
+            _nvapiService.Initialize();
+            isSupported = _nvapiService.HasGPU();
         }
         catch
         {
             isSupported = false;
-        }
-        finally
-        {
-            try { NVAPI.Unload(); }
-            catch (Exception ex) when (Log.Instance.IsTraceEnabled)
-            {
-                Log.Instance.Trace($"Failed to unload NVAPI in IsSupportedAsync.", ex);
-            }
         }
 
         if (Log.Instance.IsTraceEnabled)
@@ -162,9 +153,9 @@ public class GPUOverclockController
 
         try
         {
-            NVAPI.Initialize();
+            _nvapiService.Initialize();
 
-            var gpu = NVAPI.GetGPU();
+            var gpu = _nvapiService.GetGPU();
             if (gpu is null)
             {
                 if (Log.Instance.IsTraceEnabled)
@@ -192,12 +183,6 @@ public class GPUOverclockController
         finally
         {
             Changed?.Invoke(this, EventArgs.Empty);
-
-            try { NVAPI.Unload(); }
-            catch (Exception ex) when (Log.Instance.IsTraceEnabled)
-            {
-                Log.Instance.Trace($"Failed to unload NVAPI in ApplyStateAsync.", ex);
-            }
         }
     }
 

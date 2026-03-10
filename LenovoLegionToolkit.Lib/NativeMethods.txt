@@ -1,4 +1,4 @@
-﻿HWND_BROADCAST
+HWND_BROADCAST
 
 WM_CLOSE
 WM_COMMAND
@@ -205,6 +205,8 @@ PowerRegisterSuspendResumeNotification
 PowerUnregisterSuspendResumeNotification
 
 Shell_NotifyIcon
+Shell_NotifyIconGetRect
+NOTIFYICONIDENTIFIER
 RegisterWindowMessage
 
 WlanOpenHandle

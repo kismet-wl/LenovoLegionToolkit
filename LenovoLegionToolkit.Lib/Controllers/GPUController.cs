@@ -17,6 +17,7 @@ public class GPUController
 {
     private readonly AsyncLock _lock = new();
     private readonly NativeWindowsMessageListener _windowsMessageListener = IoCContainer.Resolve<NativeWindowsMessageListener>();
+    private readonly NVAPIService _nvapiService;
 
     private Task? _refreshTask;
     private CancellationTokenSource? _refreshCancellationTokenSource;
@@ -30,31 +31,37 @@ public class GPUController
     // 用于检测状态变化
     private GPUState _lastState = GPUState.Unknown;
     private string? _lastPerformanceState;
+    private int _lastProcessCount = -1;  // 用于检测进程数量变化
 
     // GPU 断电后暂停轮询标记
     private bool _isPausedDueToPowerOff = false;
 
+    // 事件驱动刷新节流：防止短时间内多次刷新
+    private DateTime _lastEventTriggeredRefresh = DateTime.MinValue;
+    private readonly TimeSpan _eventRefreshThrottle = TimeSpan.FromSeconds(1);
+
+    // 轮询间隔配置
+    private const int DEFAULT_INTERVAL = 30_000; // 30秒作为兜底轮询
+    private const int MONITOR_CONNECTED_INTERVAL = 60_000; // 独显直连时降低到60秒
+
     public event EventHandler<GPUStatus>? Refreshed;
     public bool IsStarted { get => _refreshTask is not null && !_refreshTask.IsCompleted; }
+
+    public GPUController(NVAPIService nvapiService)
+    {
+        _nvapiService = nvapiService;
+    }
 
     public bool IsSupported()
     {
         try
         {
-            NVAPI.Initialize();
-            return NVAPI.GetGPU() is not null;
+            _nvapiService.Initialize();
+            return _nvapiService.HasGPU();
         }
         catch
         {
             return false;
-        }
-        finally
-        {
-            try
-            {
-                NVAPI.Unload();
-            }
-            catch { /* Ignored. */ }
         }
     }
 
@@ -72,14 +79,38 @@ public class GPUController
 
     public async Task<GPUStatus> RefreshNowAsync()
     {
-        using (await _lock.LockAsync().ConfigureAwait(false))
+        // 确保 NVAPI 已初始化
+        if (!_nvapiService.IsInitialized)
+            _nvapiService.Initialize();
+
+        try
         {
-            await RefreshLoopAsync(0, 0, CancellationToken.None).ConfigureAwait(false);
+            using (await _lock.LockAsync().ConfigureAwait(false))
+            {
+                if (!_windowsMessageListener.IsMonitorOn)
+                    return new GPUStatus(_state, _performanceState, _processes);
+
+                await RefreshStateAsync().ConfigureAwait(false);
+
+                // 触发事件，确保 UI 更新
+                Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
+
+                if (Log.Instance.IsTraceEnabled)
+                    Log.Instance.Trace($"RefreshNowAsync completed: state={_state}");
+
+                return new GPUStatus(_state, _performanceState, _processes);
+            }
+        }
+        catch (Exception ex)
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"RefreshNowAsync failed", ex);
+
             return new GPUStatus(_state, _performanceState, _processes);
         }
     }
 
-    public Task StartAsync(int delay = 1_000, int interval = 5_000)
+    public Task StartAsync(int delay = 1_000, int interval = DEFAULT_INTERVAL)
     {
         _isPausedDueToPowerOff = false;  // 重置暂停状态
 
@@ -90,6 +121,7 @@ public class GPUController
             Log.Instance.Trace($"Starting... [delay={delay}, interval={interval}]");
 
         _windowsMessageListener.MonitorStateChanged += MonitorStateChanged;
+        _windowsMessageListener.Changed += OnWindowsMessageChanged;
         _refreshCancellationTokenSource = new CancellationTokenSource();
         var token = _refreshCancellationTokenSource.Token;
         _refreshTask = Task.Run(() => RefreshLoopAsync(delay, interval, token), token);
@@ -146,6 +178,7 @@ public class GPUController
         _refreshTask = null;
 
         _windowsMessageListener.MonitorStateChanged -= MonitorStateChanged;
+        _windowsMessageListener.Changed -= OnWindowsMessageChanged;
         _monitorStateCancellationTokenSource?.Cancel();
         _monitorStateCancellationTokenSource = null;
 
@@ -210,12 +243,12 @@ public class GPUController
         try
         {
             if (Log.Instance.IsTraceEnabled)
-                Log.Instance.Trace($"Initializing NVAPI...");
+                Log.Instance.Trace($"Initializing NVAPI via NVAPIService...");
 
-            NVAPI.Initialize();
+            _nvapiService.Initialize();
 
             if (Log.Instance.IsTraceEnabled)
-                Log.Instance.Trace($"Initialized NVAPI");
+                Log.Instance.Trace($"NVAPI initialized via NVAPIService");
 
             await Task.Delay(delay, token).ConfigureAwait(false);
 
@@ -236,14 +269,11 @@ public class GPUController
                         if (Log.Instance.IsTraceEnabled)
                             Log.Instance.Trace($"Refreshed, stateChanged={stateChanged}");
 
-                        // 只在状态变化时触发事件
-                        if (stateChanged)
-                        {
-                            if (Log.Instance.IsTraceEnabled)
-                                Log.Instance.Trace($"GPU state changed: {_state}");
+                        // 每次刷新都触发事件，确保 UI 持续更新
+                        if (Log.Instance.IsTraceEnabled)
+                            Log.Instance.Trace($"GPU state: {_state}, stateChanged={stateChanged}");
 
-                            Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
-                        }
+                        Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
 
                         // GPU 断电后停止轮询，避免唤醒 GPU
                         if (_state == GPUState.PoweredOff)
@@ -256,9 +286,14 @@ public class GPUController
                     }
                 }
 
-if (interval > 0)
+                // 根据当前状态动态调整轮询间隔
+                var currentInterval = _state == GPUState.MonitorConnected 
+                    ? MONITOR_CONNECTED_INTERVAL  // 独显直连时降低频率
+                    : interval;
+
+                if (currentInterval > 0)
                 {
-                    var delayTask = Task.Delay(interval, token);
+                    var delayTask = Task.Delay(currentInterval, token);
                     if (_monitorStateCancellationTokenSource?.IsCancellationRequested == false)
                     {
                         // 等待延迟或显示器状态变化
@@ -285,16 +320,6 @@ if (interval > 0)
 
             throw;
         }
-        finally
-        {
-            if (Log.Instance.IsTraceEnabled)
-                Log.Instance.Trace($"Unloading NVAPI...");
-
-            NVAPI.Unload();
-
-            if (Log.Instance.IsTraceEnabled)
-                Log.Instance.Trace($"Unloaded NVAPI");
-        }
     }
 
     private async Task<bool> RefreshStateAsync()
@@ -307,7 +332,7 @@ if (interval > 0)
         _gpuInstanceId = null;
         _performanceState = null;
 
-        var gpu = NVAPI.GetGPU();
+        var gpu = _nvapiService.GetGPU();
         if (gpu is null)
         {
             _state = GPUState.NvidiaGpuNotFound;
@@ -383,12 +408,15 @@ if (interval > 0)
                 Log.Instance.Trace($"Inactive [state={_state}, processes.Count={_processes.Count}, gpuInstanceId={_gpuInstanceId}]");
         }
 
-        // 检测状态变化
+        // 检测状态变化（包括进程数量变化）
         var stateChanged = _state != _lastState || _performanceState != _lastPerformanceState;
+        var processCountChanged = _processes.Count != _lastProcessCount;
+        
         _lastState = _state;
         _lastPerformanceState = _performanceState;
+        _lastProcessCount = _processes.Count;
 
-        return stateChanged;
+        return stateChanged || processCountChanged;
     }
 
     private void MonitorStateChanged(object? sender, bool isMonitorOn)
@@ -408,6 +436,73 @@ if (interval > 0)
         {
             // 显示器关闭，暂停刷新
             _monitorStateCancellationTokenSource?.Cancel();
+        }
+    }
+
+    private void OnWindowsMessageChanged(object? sender, NativeWindowsMessageListener.ChangedEventArgs e)
+    {
+        if (!IsStarted)
+            return;
+
+        // 只处理显示设备相关的事件
+        if (e.Message != NativeWindowsMessage.OnDisplayDeviceArrival &&
+            e.Message != NativeWindowsMessage.MonitorConnected &&
+            e.Message != NativeWindowsMessage.MonitorDisconnected &&
+            e.Message != NativeWindowsMessage.ExternalMonitorConnected &&
+            e.Message != NativeWindowsMessage.ExternalMonitorDisconnected)
+            return;
+
+        // 节流：防止短时间内多次刷新
+        var now = DateTime.Now;
+        if (now - _lastEventTriggeredRefresh < _eventRefreshThrottle)
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"Event {e.Message} throttled, skipping refresh");
+            return;
+        }
+
+        if (Log.Instance.IsTraceEnabled)
+            Log.Instance.Trace($"Event {e.Message} received, triggering GPU state refresh");
+
+        _lastEventTriggeredRefresh = now;
+        _ = TriggerRefreshAsync();
+    }
+
+    /// <summary>
+    /// 事件触发的异步刷新，不阻塞调用线程
+    /// </summary>
+    private async Task TriggerRefreshAsync()
+    {
+        // 确保 NVAPI 已初始化
+        if (!_nvapiService.IsInitialized)
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"Event-triggered refresh skipped: NVAPI not initialized");
+            return;
+        }
+
+        try
+        {
+            using (await _lock.LockAsync().ConfigureAwait(false))
+            {
+                if (!_windowsMessageListener.IsMonitorOn)
+                    return;
+
+                var stateChanged = await RefreshStateAsync().ConfigureAwait(false);
+
+                if (stateChanged)
+                {
+                    if (Log.Instance.IsTraceEnabled)
+                        Log.Instance.Trace($"Event-triggered refresh: state changed to {_state}");
+
+                    Refreshed?.Invoke(this, new GPUStatus(_state, _performanceState, _processes));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            if (Log.Instance.IsTraceEnabled)
+                Log.Instance.Trace($"Event-triggered refresh failed", ex);
         }
     }
 }

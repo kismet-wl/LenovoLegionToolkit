@@ -18,6 +18,7 @@ using LenovoLegionToolkit.Lib.PackageDownloader;
 using LenovoLegionToolkit.Lib.Services;
 using LenovoLegionToolkit.Lib.Settings;
 using LenovoLegionToolkit.Lib.SoftwareDisabler;
+using LenovoLegionToolkit.Lib.System;
 using LenovoLegionToolkit.Lib.Utils;
 
 namespace LenovoLegionToolkit.Lib;
@@ -27,6 +28,12 @@ public class IoCModule : Module
     protected override void Load(ContainerBuilder builder)
     {
         builder.Register<HttpClientFactory>();
+
+        // NVAPI 全局服务 - 单例，避免重复初始化
+        builder.RegisterType<NVAPIService>().As<NVAPIService>().SingleInstance();
+
+        // 显示设置缓存服务 - 单例
+        builder.RegisterType<DisplaySettingsCache>().As<DisplaySettingsCache>().SingleInstance();
 
         builder.Register<FnKeysDisabler>();
         builder.Register<LegionZoneDisabler>();

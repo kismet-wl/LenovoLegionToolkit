@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using System.Windows;
 using LenovoLegionToolkit.Lib;
 using LenovoLegionToolkit.Lib.Controllers;
@@ -22,7 +22,7 @@ public partial class OverclockDiscreteGPUSettingsWindow
 
         _coreSlider.Maximum = GPUOverclockController.GetMaxCoreDeltaMhz();
         _coreSlider.Value = info.CoreDeltaMhz;
-        _memorySlider.Maximum = GPUOverclockController.GetMaxMemoryDeltaMhz();
+        _memorySlider.Maximum = _gpuOverclockController.GetMaxMemoryDeltaMhz();
         _memorySlider.Value = info.MemoryDeltaMhz;
 
         _coreLabel.Content = $"{(int)_coreSlider.Value:+0;-0;0} {MHZ}";

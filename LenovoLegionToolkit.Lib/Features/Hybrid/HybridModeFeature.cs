@@ -2,11 +2,12 @@
 using System.Threading;
 using System.Threading.Tasks;
 using LenovoLegionToolkit.Lib.Features.Hybrid.Notify;
+using LenovoLegionToolkit.Lib.System;
 using LenovoLegionToolkit.Lib.Utils;
 
 namespace LenovoLegionToolkit.Lib.Features.Hybrid;
 
-public class HybridModeFeature(GSyncFeature gSyncFeature, IGPUModeFeature igpuModeFeature, DGPUNotify dgpuNotify) : IFeature<HybridModeState>, IDisposable
+public class HybridModeFeature(GSyncFeature gSyncFeature, IGPUModeFeature igpuModeFeature, DGPUNotify dgpuNotify, DisplaySettingsCache displaySettingsCache) : IFeature<HybridModeState>, IDisposable
 {
     private readonly object _ctsLock = new();
     private CancellationTokenSource _ensureDGPUEjectedIfNeededCancellationTokenSource = new();
@@ -104,6 +105,9 @@ public class HybridModeFeature(GSyncFeature gSyncFeature, IGPUModeFeature igpuMo
 
         if (Log.Instance.IsTraceEnabled)
             Log.Instance.Trace($"State set to {state} [gSync={gSync}, igpuMode={igpuMode}]");
+
+        // Hybrid Mode 切换会影响显示配置，清除缓存
+        displaySettingsCache.ClearCache();
     }
 
     public async Task EnsureDGPUEjectedIfNeededAsync()

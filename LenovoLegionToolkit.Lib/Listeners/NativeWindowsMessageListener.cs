@@ -1041,10 +1041,6 @@ public class NativeWindowsMessageListener : NativeWindow, IListener<NativeWindow
 
     private unsafe LRESULT LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
     {
-        // Debug logging to confirm hook is being called
-        if (Log.Instance.IsTraceEnabled && nCode == PInvoke.HC_ACTION)
-            Log.Instance.Trace($"Mouse hook triggered: nCode={nCode}, wParam={wParam.Value}");
-
         if (nCode != PInvoke.HC_ACTION)
             return PInvoke.CallNextHookEx(HHOOK.Null, nCode, wParam, lParam);
 

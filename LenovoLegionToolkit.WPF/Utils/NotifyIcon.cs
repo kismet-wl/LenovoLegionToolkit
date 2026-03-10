@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -64,8 +64,8 @@ public class NotifyIcon : NativeWindow, IDisposable
 
     private UiWindow? _currentToolTipWindow;
 
-    private Func<Task<UiWindow>>? _toolTipWindow;
-    public Func<Task<UiWindow>>? ToolTipWindow
+    private Func<Rectangle?, Task<UiWindow>>? _toolTipWindow;
+    public Func<Rectangle?, Task<UiWindow>>? ToolTipWindow
     {
         set
         {
@@ -151,7 +151,7 @@ public class NotifyIcon : NativeWindow, IDisposable
                 return;
 
             _currentToolTipWindow?.Close();
-            _currentToolTipWindow = await _toolTipWindow();
+            var iconLocation = GetIconLocation();_currentToolTipWindow = await _toolTipWindow(iconLocation);
 
             token.ThrowIfCancellationRequested();
 
@@ -205,6 +205,22 @@ public class NotifyIcon : NativeWindow, IDisposable
         ContextMenu.IsOpen = false;
     }
 
+    public Rectangle? GetIconLocation()
+    {
+        if (Handle == IntPtr.Zero)
+            return null;
+
+        var identifier = new NOTIFYICONIDENTIFIER
+        {
+            cbSize = (uint)Marshal.SizeOf<NOTIFYICONIDENTIFIER>(),
+            hWnd = new HWND(Handle),
+            uID = _id
+        };
+
+        var result = PInvoke.Shell_NotifyIconGetRect(identifier, out var iconRect);
+        return result == 0 ? iconRect : null;
+    }
+
     private void UpdateIcon()
     {
         lock (_lock)
@@ -214,8 +230,7 @@ public class NotifyIcon : NativeWindow, IDisposable
                 cbSize = (uint)Marshal.SizeOf<NOTIFYICONDATAW>(),
                 uID = _id,
                 uCallbackMessage = TRAY_MESSAGE_ID,
-                uFlags = NOTIFY_ICON_DATA_FLAGS.NIF_MESSAGE | NOTIFY_ICON_DATA_FLAGS.NIF_TIP,
-                szTip = " "
+                uFlags = NOTIFY_ICON_DATA_FLAGS.NIF_MESSAGE
             };
 
             if (_visible && Handle == IntPtr.Zero)
@@ -229,10 +244,15 @@ public class NotifyIcon : NativeWindow, IDisposable
                 data.hIcon = new HICON(_icon.Handle);
             }
 
-            if (_text is not null && _toolTipWindow is null)
+            // 只有在不使用自定义 StatusWindow 时才设置原生 tooltip
+            if (_toolTipWindow is null)
             {
-                data.uFlags |= NOTIFY_ICON_DATA_FLAGS.NIF_SHOWTIP;
-                data.szTip = _text;
+                data.uFlags |= NOTIFY_ICON_DATA_FLAGS.NIF_TIP;
+                if (_text is not null)
+                {
+                    data.uFlags |= NOTIFY_ICON_DATA_FLAGS.NIF_SHOWTIP;
+                    data.szTip = _text;
+                }
             }
 
             switch (_visible, _added)

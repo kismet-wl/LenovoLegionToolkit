@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -47,7 +47,7 @@ public class TrayHelper : IDisposable
 
         if (trayTooltipEnabled)
         {
-            notifyIcon.ToolTipWindow = async () => await StatusWindow.CreateAsync();
+            notifyIcon.ToolTipWindow = async (iconRect) => await StatusWindow.CreateAsync(iconRect);
         }
 
         notifyIcon.ContextMenu = _contextMenu;
